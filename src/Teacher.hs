@@ -11,9 +11,9 @@ import           NLambda
 import           Data.Function           (fix)
 import           Data.List               (zip, (!!))
 import           Data.Maybe              (Maybe (..))
-import           Prelude                 (Bool (..), IO, Int, Read, Show, error,
-                                          fmap, length, return, ($), (++), (-),
-                                          (<), (==))
+import           Prelude                 (Bool (..), Int, Read, Show, error,
+                                          length, return, ($), (++), (-), (<),
+                                          (==))
 import qualified Prelude
 
 -- Used in the IO teacher
@@ -79,7 +79,7 @@ instance Teacher TeacherWithIO Atom where
         Prelude.putStrLn "\n# Is the following word accepted?"
         Prelude.putStr "# "
         Prelude.print input
-        Prelude.putStrLn "# You can answer with a formula (EQ, NEQ, AND, OR, TRUE, FALSE)"
+        Prelude.putStrLn "# You can answer with a formula (EQ, NEQ, AND, OR, T, F)"
         Prelude.putStrLn "# You may use the following atoms:"
         Prelude.putStr "# "
         Prelude.print $ zip supp [0..]
@@ -131,14 +131,14 @@ data Form
     | NEQ Int Int
     | AND Form Form
     | OR Form Form
-    | TRUE
-    | FALSE
+    | T
+    | F
     deriving (Read)
 
 interpret :: [Atom] -> Form -> Formula
 interpret support (EQ i j) = eq (support !! i) (support !! j)
 interpret support (NEQ i j) = neq (support !! i) (support !! j)
 interpret support (AND f1 f2) = interpret support f1 /\ interpret support f2
-interpret support (OR f1 f2) = interpret support f1 \/ interpret support f1
-interpret _ TRUE = true
-interpret _ FALSE = false
+interpret support (OR f1 f2) = interpret support f1 \/ interpret support f2
+interpret _ T = true
+interpret _ F = false

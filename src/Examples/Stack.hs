@@ -4,9 +4,9 @@ module Examples.Stack (DataInput(..), stackExample) where
 import           Examples.Fifo (DataInput (..))
 import           GHC.Generics  (Generic)
 import           NLambda
-import           Prelude       (Bool (..), Eq, Int, Maybe (..), Ord, Show,
-                                length, ($), (.), (>=))
-import qualified Prelude
+import           Prelude       (Eq, Int, Maybe (..), Ord, Show, length, ($),
+                                (.), (>=))
+import qualified Prelude       ()
 
 
 -- Functional stack data type is simply a list.
@@ -18,10 +18,6 @@ push x (Stack l1) = Stack (x:l1)
 pop :: Stack a -> Maybe (a, Stack a)
 pop (Stack [])    = Nothing
 pop (Stack (x:l)) = Just (x, Stack l)
-
-isEmptyStack :: Stack a -> Bool
-isEmptyStack (Stack []) = True
-isEmptyStack _          = False
 
 emptyStack :: Stack a
 emptyStack = Stack []
@@ -40,6 +36,7 @@ sizeStack (Stack l1) = length l1
 -- The automaton: States consist of stacks and a sink state.
 -- The parameter n is the bound.
 instance BareNominalType a => BareNominalType (Stack a)
+stackExample :: Int -> Automaton (Maybe (Stack Atom)) DataInput
 stackExample n = automaton
     -- states
     (singleton Nothing

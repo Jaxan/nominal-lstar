@@ -1,15 +1,11 @@
 {-# LANGUAGE DeriveGeneric #-}
 module Examples.Contrived where
 
-import           Teacher
-
 import           NLambda
 
 -- Explicit Prelude, as NLambda has quite some clashes
-import           Data.Either  (Either (..))
-import           Data.Maybe   (Maybe (..))
-import           Prelude      (Bool (..), Eq, Ord, Show, ($), (.))
-import qualified Prelude
+import           Prelude      (Eq, Ord, Show, ($))
+import qualified Prelude      ()
 
 import           GHC.Generics (Generic)
 
@@ -18,6 +14,7 @@ import           GHC.Generics (Generic)
 data Example1 = Initial | S1 Atom | S2 (Atom, Atom)
   deriving (Show, Eq, Ord, Generic)
 instance BareNominalType Example1
+example1 :: Automaton Example1 Atom
 example1 = automaton
     -- states, 4 orbits (of which one unreachable)
     (singleton Initial
@@ -41,6 +38,7 @@ example1 = automaton
 -- trivial action. No registers.
 data Aut2 = Even | Odd deriving (Eq, Ord, Show, Generic)
 instance BareNominalType Aut2
+example2 :: Automaton Aut2 Atom
 example2 = automaton
     -- states, two orbits
     (fromList [Even, Odd])
@@ -59,6 +57,7 @@ example2 = automaton
 -- state, a state with a register and a sink state.
 data Aut3 = Empty | Stored Atom | Sink deriving (Eq, Ord, Show, Generic)
 instance BareNominalType Aut3
+example3 :: Automaton Aut3 Atom
 example3 = automaton
     -- states, three orbits
     (fromList [Empty, Sink]
@@ -87,7 +86,7 @@ data Aut4 = Aut4Init              -- Initial state
           | Sorted Atom Atom Atom -- State without symmetry
   deriving (Eq, Ord, Show, Generic)
 instance BareNominalType Aut4
-
+example4 :: Automaton Aut4 Atom
 example4 = automaton
     -- states
     (singleton Aut4Init
@@ -120,3 +119,28 @@ example4 = automaton
         atomsQuadruples = map (\[a,b,c,d] -> (a,b,c,d)) $ replicateAtoms 4
         unc2 f (a,b) = f a b
         unc3 f (a,b,c) = f a b c
+
+
+-- Accepts all two-symbols words with different atoms
+data Aut5 = Aut5Init | Aut5Store Atom | Aut5T | Aut5F
+    deriving (Eq, Ord, Show, Generic)
+instance BareNominalType Aut5
+example5 :: Automaton Aut5 Atom
+example5 = automaton
+    -- states
+    (singleton Aut5Init
+        `union` map Aut5Store atoms
+        `union` singleton Aut5T
+        `union` singleton Aut5F)
+    -- alphabet
+    atoms
+    -- transitions
+    (map (\a -> (Aut5Init, a, Aut5Store a)) atoms
+        `union` map (\a -> (Aut5Store a, a, Aut5F)) atoms
+        `union` map (\(a, b) -> (Aut5Store a, b, Aut5T)) differentAtomsPairs
+        `union` map (\a -> (Aut5F, a, Aut5F)) atoms
+        `union` map (\a -> (Aut5T, a, Aut5F)) atoms)
+    -- initial states
+    (singleton Aut5Init)
+    -- final states
+    (singleton Aut5T)

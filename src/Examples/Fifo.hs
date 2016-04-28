@@ -3,9 +3,9 @@ module Examples.Fifo (DataInput(..), fifoExample) where
 
 import           GHC.Generics (Generic)
 import           NLambda
-import           Prelude      (Bool (..), Eq, Int, Maybe (..), Ord, Show,
-                               length, reverse, ($), (+), (-), (.), (>=))
-import qualified Prelude
+import           Prelude      (Eq, Int, Maybe (..), Ord, Show, length, reverse,
+                               ($), (+), (-), (.), (>=))
+import qualified Prelude      ()
 
 
 -- Functional queue data type. First list is for push stuff onto, the
@@ -20,10 +20,6 @@ pop :: Fifo a -> Maybe (a, Fifo a)
 pop (Fifo [] [])     = Nothing
 pop (Fifo l1 [])     = pop (Fifo [] (reverse l1))
 pop (Fifo l1 (x:l2)) = Just (x, Fifo l1 l2)
-
-isEmptyFifo :: Fifo a -> Bool
-isEmptyFifo (Fifo [] []) = True
-isEmptyFifo _            = False
 
 emptyFifo :: Fifo a
 emptyFifo = Fifo [] []
@@ -48,6 +44,7 @@ instance Contextual DataInput where
 -- This representation is not minimal at all, but that's OK, since the
 -- learner will learn a minimal anyways. The parameter n is the bound.
 instance BareNominalType a => BareNominalType (Fifo a)
+fifoExample :: Int -> Automaton (Maybe (Fifo Atom)) DataInput
 fifoExample n = automaton
     -- states
     (singleton Nothing

@@ -9,7 +9,7 @@ import           Teacher
 
 import           NLambda
 
-import           Data.List        (inits)
+import           Data.List        (inits, tails)
 import           Prelude          hiding (and, curry, filter, lookup, map, not,
                                    sum, uncurry)
 
@@ -53,9 +53,6 @@ instance (Conditional a) => Conditional (IO a) where
 -- (Same holds for many other functions here)
 makeCompleteConsistent :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> State i -> IO (State i)
 makeCompleteConsistent teacher state@State{..} = do
-    putStrLn ""
-    print state
-    putStrLn ""
     -- inc is the set of rows witnessing incompleteness, that is the sequences
     -- 's1 a' which do not have their equivalents of the form 's2'.
     let inc = incompleteness state
@@ -106,8 +103,8 @@ constructHypothesis State{..} = automaton q a d i f
         toform s = forAll id . map fromBool $ s
 
 -- Extends the table with all prefixes of a set of counter examples.
-useCounterExample :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> State i -> Set [i] -> IO (State i)
-useCounterExample teacher state@State{..} ces = do
+useCounterExampleAngluin :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> State i -> Set [i] -> IO (State i)
+useCounterExampleAngluin teacher state@State{..} ces = do
     putStr "Using ce: "
     print ces
     let ds = sum . map (fromList . inits) $ ces
@@ -115,6 +112,20 @@ useCounterExample teacher state@State{..} ces = do
     print ds
     let state2 = addRows teacher ds state
     return state2
+
+-- I am not quite sure whether this variant is due to Rivest & Schapire or Maler & Pnueli.
+useCounterExampleRS :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> State i -> Set [i] -> IO (State i)
+useCounterExampleRS teacher state@State{..} ces = do
+    putStr "Using ce: "
+    print ces
+    let de = sum . map (fromList . tails) $ ces
+    putStr " -> Adding columns: "
+    print de
+    let state2 = addColumns teacher de state
+    return state2
+
+useCounterExample :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> State i -> Set [i] -> IO (State i)
+useCounterExample = useCounterExampleRS
 
 -- The main loop, which results in an automaton. Will stop if the hypothesis
 -- exactly accepts the language we are learning.

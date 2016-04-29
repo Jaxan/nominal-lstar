@@ -9,12 +9,13 @@ import           NLambda
 
 -- Explicit Prelude, as NLambda has quite some clashes
 import           Data.Function           (fix)
-import           Data.List               (zip, (!!))
+import           Data.List               (zip, (!!), reverse)
 import           Data.Maybe              (Maybe (..))
 import           Prelude                 (Bool (..), Int, Read, Show, error,
                                           length, return, ($), (++), (-), (<),
                                           (==))
 import qualified Prelude
+import Control.Monad.Identity (Identity(..))
 
 -- Used in the IO teacher
 import           System.Console.Readline
@@ -46,25 +47,43 @@ instance (NominalType i) => Teacher (TeacherWithTarget i) i where
     equivalent (TeacherWithTarget aut) hypo = case solve isEq of
         Nothing -> error "should be solved"
         Just True -> Nothing
-        Just False -> Just ce
+        Just False -> Just bisimRes
         where
-            isEq = equivalentDA aut hypo
-            lDiff = aut `differenceDA` hypo
-            rDiff = hypo `differenceDA` aut
-            symmDiff = lDiff `unionDA` rDiff
-            ce = searchWord symmDiff
+            bisimRes = bisim aut hypo
+            isEq = isEmpty bisimRes
     alphabet (TeacherWithTarget aut) = NLambda.alphabet aut
 
--- Searching a word in the difference automaton
--- Will find all shortest ones
-searchWord :: (NominalType i, NominalType q) => Automaton q i -> Set [i]
-searchWord d = go (singleton [])
-    where
-        go aa = let candidates = filter (accepts d) aa in
-            ite (isEmpty candidates)
-                (go $ pairsWith (\as a -> a:as) aa (NLambda.alphabet d))
-                candidates
+instance Conditional a => Conditional (Identity a) where
+    cond f x y = return (cond f (runIdentity x) (runIdentity y))
 
+-- Checks bisimulation of initial states
+-- I am not sure whether it does the right thing for non-det automata
+-- returns some counter examples if not bisimilar
+-- returns empty set iff bisimilar
+bisim :: (NominalType i, NominalType q1, NominalType q2) => Automaton q1 i -> Automaton q2 i -> Set [i]
+bisim aut1 aut2 = runIdentity $ go empty (pairsWith addEmptyWord (initialStates aut1) (initialStates aut2))
+    where
+        go rel todo = do
+            -- if elements are already in R, we can skip them
+            let todo2 = filter (\(_, x, y) -> (x, y) `notMember` rel) todo
+            -- split into correct pairs and wrong pairs
+            let (cont, ces) = partition (\(_, x, y) -> (x `member` (finalStates aut1)) <==> (y `member` (finalStates aut2))) todo2
+            let aa = NLambda.alphabet aut1
+            -- the good pairs should make one step
+            let dtodo = sum (pairsWith (\(w, x, y) a -> pairsWith (\x2 y2 -> (a:w, x2, y2)) (d aut1 a x) (d aut2 a y)) cont aa)
+            -- if there are wrong pairs
+            ite (isNotEmpty ces)
+                -- then return counter examples
+                (return $ map getRevWord ces)
+                -- else continue with good pairs
+                (ite (isEmpty dtodo)
+                    (return empty)
+                    (go (rel `union` map stripWord cont) (dtodo))
+                )
+        d aut a x = mapFilter (\(s, l, t) -> maybeIf (s `eq` x /\ l `eq` a) t) (delta aut)
+        stripWord (_, x, y) = (x, y)
+        getRevWord (w, _, _) = reverse w
+        addEmptyWord x y = ([], x, y)
 
 -- Will ask everything to someone reading the terminal
 data TeacherWithIO = TeacherWithIO

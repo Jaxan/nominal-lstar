@@ -22,6 +22,7 @@ executable NominalAngluin
   build-depends:
     base >=4.8 && <4.9,
     containers,
+    mtl,
     NLambda,
     readline
   hs-source-dirs:      src

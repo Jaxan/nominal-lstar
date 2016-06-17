@@ -22,7 +22,7 @@ type Row i o = Fun [i] o
 -- `row is` denotes the data of a single row
 -- that is, the function E -> O
 row :: (NominalType i, NominalType o) => Table i o -> [i] -> Fun [i] o
-row t is = sum (apply (curry t) is)
+row t is = mapFilter (\((a,b),c) -> maybeIf (eq is a) (b,c)) t
 
 -- `rowa is a` is the row for the one letter extensions
 rowa :: (NominalType i, NominalType o) => Table i o -> [i] -> i -> Fun [i] o

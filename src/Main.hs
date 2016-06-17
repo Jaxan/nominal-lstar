@@ -24,8 +24,8 @@ incompleteness State{..} = filter (not . hasEqRow) ssa
 
 -- We can determine its consistency with the following
 -- Returns equivalent rows (fst) with all inequivalent extensions (snd)
-inconsistency :: NominalType i => State i -> Set (([i], [i], i), Set [i])
-inconsistency State{..} =
+inconsistencyJoshua :: NominalType i => State i -> Set (([i], [i], i), Set [i])
+inconsistencyJoshua State{..} =
     triplesWithFilter (
         \s1 s2 a -> maybeIf (candidate s1 s2 a) ((s1, s2, a), discrepancy (rowa t s1 a) (rowa t s2 a))
     ) ss ss aa
@@ -35,6 +35,19 @@ inconsistency State{..} =
         candidate s1 s2 a = s1 `neq` s2
                             /\ row t s1 `eq` row t s2
                             /\ rowa t s1 a `neq` rowa t s2 a
+
+inconsistencyBartek :: NominalType i => State i -> Set (([i], [i], i), Set [i])
+inconsistencyBartek State{..} =
+    pairsWithFilter (
+        \(s1, s2) a -> maybeIf (candidate1 s1 s2 a) ((s1, s2, a), discrepancy (rowa t s1 a) (rowa t s2 a))
+    ) rowPairs aa
+    where
+        rowPairs = pairsWithFilter (\s1 s2 -> maybeIf (candidate0 s1 s2) (s1,s2)) ss ss
+        candidate0 s1 s2 = s1 `neq` s2 /\ row t s1 `eq` row t s2
+        candidate1 s1 s2 a = rowa t s1 a `neq` rowa t s2 a
+
+inconsistency :: NominalType i => State i -> Set (([i], [i], i), Set [i])
+inconsistency = inconsistencyBartek
 
 -- This can be written for all monads. Unfortunately (a,) is also a monad and
 -- this gives rise to overlapping instances, so I only do it for IO here.

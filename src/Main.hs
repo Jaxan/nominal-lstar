@@ -19,8 +19,9 @@ import           Prelude          hiding (and, curry, filter, lookup, map, not,
 incompleteness :: NominalType i => State i -> Set [i]
 incompleteness State{..} = filter (not . hasEqRow) ssa
     where
+        sss = map (row t) ss
         -- true if the sequence sa has an equivalent row in ss
-        hasEqRow sa = exists (\s2 -> eq (row t sa) (row t s2)) ss
+        hasEqRow = contains sss . row t
 
 -- We can determine its consistency with the following
 -- Returns equivalent rows (fst) with all inequivalent extensions (snd)

@@ -11,7 +11,7 @@ import           Teacher
 
 import           Data.Maybe   (fromJust)
 import           GHC.Generics (Generic)
-import           Prelude      (Bool (..), Eq, Ord, Show, ($), (++), (.))
+import           Prelude      (Bool (..), Eq, Ord, Show, ($), (++), (.), uncurry)
 import qualified Prelude      ()
 
 -- An observation table is a function S x E -> O
@@ -36,12 +36,12 @@ type BRow i = Row i Bool
 -- second is columns. Although the teacher provides us formulas instead of
 -- booleans, we can partition the answers to obtain actual booleans.
 fillTable :: (Contextual i, NominalType i, Teacher t i) => t -> Set [i] -> Set [i] -> BTable i
-fillTable teacher sssa ee = sum2 . map2 (map slv) . map2 simplify . partition (\(_, _, f) -> f) $ base
+fillTable teacher sssa ee = map tupleIso . Prelude.uncurry union . setTrueFalse . partition (\(_, _, f) -> f) $ base
     where
         base = pairsWith (\s e -> (s, e, membership teacher (s++e))) sssa ee
-        map2 f (a, b) = (f a, f b)
-        slv (a,b,f) = ((a,b), fromJust . solve $ f)
-        sum2 (a,b) = a `union` b
+        setTrueFalse (trueSet, falseSet) = (map (setThird True) trueSet, map (setThird False) falseSet)
+        setThird a (x, y, _) = (x, y, a)
+        tupleIso (x,y,z) = ((x,y),z)
 
 
 -- Data structure representing the state of the learning algorithm (NOT a

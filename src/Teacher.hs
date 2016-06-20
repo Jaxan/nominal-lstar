@@ -18,7 +18,7 @@ import qualified Prelude
 import Control.Monad.Identity (Identity(..))
 
 -- Used in the IO teacher
-import           System.Console.Readline
+import           System.Console.Haskeline
 import           System.IO.Unsafe        (unsafePerformIO)
 import           Text.Read               (readMaybe)
 
@@ -102,34 +102,25 @@ instance Teacher TeacherWithIO Atom where
         Prelude.putStrLn "# You may use the following atoms:"
         Prelude.putStr "# "
         Prelude.print $ zip supp [0..]
-        answer <- fix (\m -> do
-                x <- readline "> "
+        answer <- runInputT defaultSettings loop
+        return $ interpret supp answer
+        where
+            loop = do
+                x <- getInputLine "> "
                 case x of
                     Nothing -> error "Quit"
                     Just str -> do
                         case readMaybe str :: Maybe Form of
                             Nothing -> do
-                                Prelude.putStrLn $ "Unable to parse " ++ str ++ " :: Form"
-                                m
+                                outputStrLn $ "Unable to parse " ++ str ++ " :: Form"
+                                loop
                             Just f -> return f
-            )
-        return $ interpret supp answer
     equivalent _ hypothesis = unsafePerformIO $ do
         Prelude.putStrLn "\n# Is the following automaton correct?"
         Prelude.putStr "# "
         Prelude.print hypothesis
         Prelude.putStrLn "# Nothing for Yes, Just [...] for a counter example"
-        answer <- fix (\m -> do
-                x <- readline "> "
-                case x of
-                    Nothing -> error "Quit"
-                    Just str -> do
-                        case readMaybe str :: Maybe (Maybe [Prelude.String]) of
-                            Nothing -> do
-                                Prelude.putStrLn $ "Unable to parse " ++ str ++ " :: Maybe [String]"
-                                m
-                            Just f -> return f
-            )
+        answer <- runInputT defaultSettings loop
         case answer of
             Nothing -> return Nothing
             Just input -> do
@@ -142,6 +133,17 @@ instance Teacher TeacherWithIO Atom where
                 let rels s = and [op i j (s !! i) (s !! j) | i <- [0..n - 1], j <- [0..n - 1], i < j]
                 let fseq = filter rels sequence
                 return $ Just fseq
+        where
+            loop = do
+                x <- getInputLine "> "
+                case x of
+                    Nothing -> error "Quit"
+                    Just str -> do
+                        case readMaybe str :: Maybe (Maybe [Prelude.String]) of
+                            Nothing -> do
+                                outputStrLn $ "Unable to parse " ++ str ++ " :: Maybe [String]"
+                                loop
+                            Just f -> return f
     alphabet _ = atoms
 
 -- Data structure for reading formulas (with the derived Read instance)

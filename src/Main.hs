@@ -7,6 +7,8 @@ import           Functions
 import           ObservationTable
 import           Teacher
 
+import NLStar
+
 import           NLambda
 
 import           Data.List        (inits, tails)
@@ -49,18 +51,6 @@ inconsistencyBartek State{..} =
 
 inconsistency :: NominalType i => State i -> Set (([i], [i], i), Set [i])
 inconsistency = inconsistencyBartek
-
--- This can be written for all monads. Unfortunately (a,) is also a monad and
--- this gives rise to overlapping instances, so I only do it for IO here.
--- Note that it is not really well defined, but it kinda works.
-instance (Conditional a) => Conditional (IO a) where
-    cond f a b = case solve f of
-        Just True -> a
-        Just False -> b
-        Nothing -> fail "### Unresolved branch ###"
-        -- NOTE: another implementation would be to evaluate both a and b
-        -- and apply ite to their results. This however would runs both side
-        -- effects of a and b.
 
 -- This function will (recursively) make the table complete and consistent.
 -- This is in the IO monad purely because I want some debugging information.

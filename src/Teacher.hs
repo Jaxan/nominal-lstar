@@ -85,6 +85,7 @@ bisim aut1 aut2 = runIdentity $ go empty (pairsWith addEmptyWord (initialStates 
         getRevWord (w, _, _) = reverse w
         addEmptyWord x y = ([], x, y)
 
+
 -- Will ask everything to someone reading the terminal
 data TeacherWithIO = TeacherWithIO
 
@@ -163,3 +164,13 @@ interpret support (AND f1 f2) = interpret support f1 /\ interpret support f2
 interpret support (OR f1 f2) = interpret support f1 \/ interpret support f2
 interpret _ T = true
 interpret _ F = false
+
+
+-- A teacher uses a target for the mebership queries, but you for equivalence
+-- Useful as long as you don't have an equivalence check, For example for G-NFAs
+data TeacherWithTargetAndIO i = forall q . NominalType q => TeacherWithTargetAndIO (Automaton q i)
+
+instance Teacher (TeacherWithTargetAndIO Atom) Atom where
+    membership (TeacherWithTargetAndIO aut) input = membership (TeacherWithTarget aut) input
+    equivalent (TeacherWithTargetAndIO aut) aut2  = equivalent TeacherWithIO aut2
+    alphabet (TeacherWithTargetAndIO aut)         = NLambda.alphabet aut

@@ -1,6 +1,7 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 module Examples.Fifo (DataInput(..), fifoExample) where
 
+import Control.DeepSeq (NFData)
 import           GHC.Generics (Generic)
 import           NLambda
 import           Prelude      (Eq, Int, Maybe (..), Ord, Show, length, reverse,
@@ -34,7 +35,7 @@ sizeFifo (Fifo l1 l2) = length l1 + length l2
 -- nominal automaton.
 
 -- The alphabet:
-data DataInput = Put Atom | Get Atom deriving (Eq, Ord, Show, Generic)
+data DataInput = Put Atom | Get Atom deriving (Eq, Ord, Show, Generic, NFData)
 instance BareNominalType DataInput
 instance Contextual DataInput where
     when f (Put a) = Put (when f a)

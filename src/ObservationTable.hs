@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RecordWildCards   #-}
@@ -13,6 +14,8 @@ import           Data.Maybe   (fromJust)
 import           GHC.Generics (Generic)
 import           Prelude      (Bool (..), Eq, Ord, Show, ($), (++), (.), uncurry)
 import qualified Prelude      ()
+
+import Control.DeepSeq
 
 -- An observation table is a function S x E -> O
 -- (Also includes SA x E -> O)
@@ -53,9 +56,7 @@ data State i = State
     , ee  :: Set [i]  -- suffixes
     , aa  :: Set i    -- alphabet (remains constant)
     }
-    deriving (Show, Ord, Eq, Generic)
-
-instance NominalType i => BareNominalType (State i)
+    deriving (Show, Ord, Eq, Generic, NFData, BareNominalType)
 
 instance NominalType i => Conditional (State i) where
     cond f s1 s2 = fromTup (cond f (toTup s1) (toTup s2)) where

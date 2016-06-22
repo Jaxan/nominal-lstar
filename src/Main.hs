@@ -6,8 +6,7 @@ import           Examples
 import           Functions
 import           ObservationTable
 import           Teacher
-
-import NLStar
+import           NLStar
 
 import           NLambda
 
@@ -55,7 +54,7 @@ inconsistency = inconsistencyBartek
 -- This function will (recursively) make the table complete and consistent.
 -- This is in the IO monad purely because I want some debugging information.
 -- (Same holds for many other functions here)
-makeCompleteConsistent :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> State i -> IO (State i)
+makeCompleteConsistent :: LearnableAlphabet i => Teacher i -> State i -> IO (State i)
 makeCompleteConsistent teacher state@State{..} = do
     -- inc is the set of rows witnessing incompleteness, that is the sequences
     -- 's1 a' which do not have their equivalents of the form 's2'.
@@ -107,7 +106,7 @@ constructHypothesis State{..} = automaton q a d i f
         toform s = forAll id . map fromBool $ s
 
 -- Extends the table with all prefixes of a set of counter examples.
-useCounterExampleAngluin :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> State i -> Set [i] -> IO (State i)
+useCounterExampleAngluin :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> IO (State i)
 useCounterExampleAngluin teacher state@State{..} ces = do
     putStr "Using ce: "
     print ces
@@ -118,7 +117,7 @@ useCounterExampleAngluin teacher state@State{..} ces = do
     return state2
 
 -- I am not quite sure whether this variant is due to Rivest & Schapire or Maler & Pnueli.
-useCounterExampleRS :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> State i -> Set [i] -> IO (State i)
+useCounterExampleRS :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> IO (State i)
 useCounterExampleRS teacher state@State{..} ces = do
     putStr "Using ce: "
     print ces
@@ -128,12 +127,12 @@ useCounterExampleRS teacher state@State{..} ces = do
     let state2 = addColumns teacher de state
     return state2
 
-useCounterExample :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> State i -> Set [i] -> IO (State i)
+useCounterExample :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> IO (State i)
 useCounterExample = useCounterExampleRS
 
 -- The main loop, which results in an automaton. Will stop if the hypothesis
 -- exactly accepts the language we are learning.
-loop :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> State i -> IO (Automaton (BRow i) i)
+loop :: LearnableAlphabet i => Teacher i -> State i -> IO (Automaton (BRow i) i)
 loop teacher s = do
     putStrLn "##################"
     putStrLn "1. Making it complete and consistent"
@@ -150,7 +149,7 @@ loop teacher s = do
             s <- useCounterExample teacher s ce
             loop teacher s
 
-constructEmptyState :: (Contextual i, NominalType i, Teacher t i) => t -> State i
+constructEmptyState :: LearnableAlphabet i => Teacher i -> State i
 constructEmptyState teacher =
     let aa = Teacher.alphabet teacher in
     let ss = singleton [] in
@@ -159,7 +158,7 @@ constructEmptyState teacher =
     let t = fillTable teacher (ss `union` ssa) ee in
     State{..}
 
-learn :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> IO (Automaton (BRow i) i)
+learn :: LearnableAlphabet i => Teacher i -> IO (Automaton (BRow i) i)
 learn teacher = do
     let s = constructEmptyState teacher
     loop teacher s

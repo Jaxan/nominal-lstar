@@ -66,7 +66,7 @@ instance (Conditional a) => Conditional (IO a) where
 -- This function will (recursively) make the table complete and consistent.
 -- This is in the IO monad purely because I want some debugging information.
 -- (Same holds for many other functions here)
-makeCompleteConsistentNonDet :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> State i -> IO (State i)
+makeCompleteConsistentNonDet :: LearnableAlphabet i => Teacher i -> State i -> IO (State i)
 makeCompleteConsistentNonDet teacher state@State{..} = do
     -- inc is the set of rows witnessing incompleteness, that is the sequences
     -- 's1 a' which do not have their equivalents of the form 's2'.
@@ -126,7 +126,7 @@ constructHypothesisNonDet State{..} = automaton q a d i f
         toform s = forAll id . map fromBool $ s
 
 -- I am not quite sure whether this variant is due to Rivest & Schapire or Maler & Pnueli.
-useCounterExampleNonDet :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> State i -> Set [i] -> IO (State i)
+useCounterExampleNonDet :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> IO (State i)
 useCounterExampleNonDet teacher state@State{..} ces = do
     putStr "Using ce: "
     print ces
@@ -138,7 +138,7 @@ useCounterExampleNonDet teacher state@State{..} ces = do
 
 -- The main loop, which results in an automaton. Will stop if the hypothesis
 -- exactly accepts the language we are learning.
-loopNonDet :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> State i -> IO (Automaton (BRow i) i)
+loopNonDet :: LearnableAlphabet i => Teacher i -> State i -> IO (Automaton (BRow i) i)
 loopNonDet teacher s = do
     putStrLn "##################"
     putStrLn "1. Making it complete and consistent"
@@ -155,7 +155,7 @@ loopNonDet teacher s = do
             s <- useCounterExampleNonDet teacher s ce
             loopNonDet teacher s
 
-constructEmptyStateNonDet :: (Contextual i, NominalType i, Teacher t i) => t -> State i
+constructEmptyStateNonDet :: LearnableAlphabet i => Teacher i -> State i
 constructEmptyStateNonDet teacher =
     let aa = Teacher.alphabet teacher in
     let ss = singleton [] in
@@ -164,7 +164,7 @@ constructEmptyStateNonDet teacher =
     let t = fillTable teacher (ss `union` ssa) ee in
     State{..}
 
-learnNonDet :: (Show i, Contextual i, NominalType i, Teacher t i) => t -> IO (Automaton (BRow i) i)
+learnNonDet :: LearnableAlphabet i => Teacher i -> IO (Automaton (BRow i) i)
 learnNonDet teacher = do
     let s = constructEmptyStateNonDet teacher
     loopNonDet teacher s

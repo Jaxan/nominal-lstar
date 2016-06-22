@@ -11,8 +11,8 @@ import           Examples.ContrivedNFAs
 import           Examples.Fifo
 import           Examples.Stack
 import           NLambda            (Atom)
-import           Teacher            (TeacherWithTarget (..))
+import           Teacher            (teacherWithTarget, Teacher)
 
 -- Wrapping it in a teacher
-exampleTeacher :: TeacherWithTarget Atom
-exampleTeacher = TeacherWithTarget example4
+exampleTeacher :: Teacher Atom
+exampleTeacher = teacherWithTarget example4

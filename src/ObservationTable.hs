@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE FlexibleContexts  #-}
@@ -10,17 +11,21 @@ import           Functions
 import           NLambda      hiding (fromJust)
 import           Teacher
 
+import           Control.DeepSeq (NFData, force)
 import           Data.Maybe   (fromJust)
 import           GHC.Generics (Generic)
 import           Prelude      (Bool (..), Eq, Ord, Show, ($), (++), (.), uncurry)
 import qualified Prelude      ()
 
-import Control.DeepSeq
 
 -- An observation table is a function S x E -> O
 -- (Also includes SA x E -> O)
 type Table i o = Fun ([i], [i]) o
 type Row i o = Fun [i] o
+
+-- This is a rather arbitrary set of constraints
+-- But I use them *everywhere*, so let's define them once and for all.
+type LearnableAlphabet i = (NFData i, Contextual i, NominalType i, Show i)
 
 -- `row is` denotes the data of a single row
 -- that is, the function E -> O
@@ -38,14 +43,12 @@ type BRow i = Row i Bool
 -- fills part of the table. First parameter is the rows (with extension),
 -- second is columns. Although the teacher provides us formulas instead of
 -- booleans, we can partition the answers to obtain actual booleans.
-fillTable :: (Contextual i, NominalType i, Teacher t i) => t -> Set [i] -> Set [i] -> BTable i
-fillTable teacher sssa ee = map tupleIso . Prelude.uncurry union . setTrueFalse . partition (\(_, _, f) -> f) $ base
+fillTable :: LearnableAlphabet i => Teacher i -> Set [i] -> Set [i] -> BTable i
+fillTable teacher sssa ee = force . Prelude.uncurry union . map2 (map slv) . map2 simplify . partition (\(_, _, f) -> f) $ base
     where
         base = pairsWith (\s e -> (s, e, membership teacher (s++e))) sssa ee
-        setTrueFalse (trueSet, falseSet) = (map (setThird True) trueSet, map (setThird False) falseSet)
-        setThird a (x, y, _) = (x, y, a)
-        tupleIso (x,y,z) = ((x,y),z)
-
+        map2 f (a, b) = (f a, f b)
+        slv (a,b,f) = ((a,b), fromJust . solve $ f)
 
 -- Data structure representing the state of the learning algorithm (NOT a
 -- state in the automaton)
@@ -64,7 +67,7 @@ instance NominalType i => Conditional (State i) where
         fromTup (t,ss,ssa,ee,aa) = State{..}
 
 -- Precondition: the set together with the current rows is prefix closed
-addRows :: (Contextual i, NominalType i, Teacher t i) => t -> Set [i] -> State i -> State i
+addRows :: LearnableAlphabet i => Teacher i -> Set [i] -> State i -> State i
 addRows teacher ds0 state@State{..} = state {t = t `union` dt, ss = ss `union` ds, ssa = ssa `union` dsa}
     where
         -- first remove redundancy
@@ -76,7 +79,7 @@ addRows teacher ds0 state@State{..} = state {t = t `union` dt, ss = ss `union` d
         dt = fillTable teacher dsa ee
 
 
-addColumns :: (Contextual i, NominalType i, Teacher t i) => t -> Set [i] -> State i -> State i
+addColumns :: LearnableAlphabet i => Teacher i -> Set [i] -> State i -> State i
 addColumns teacher de0 state@State{..} = state {t = t `union` dt, ee = ee `union` de}
     where
         -- first remove redundancy

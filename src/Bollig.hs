@@ -60,7 +60,7 @@ rfsaConsistencyTest State{..} = case solve (isEmpty defect) of
     Nothing    -> trace "@@@ Unsolved Formula (rfsaConsistencyTest) @@@" $
                   Failed empty defect
     where
-        candidates = pairsWithFilter (\u1 u2 -> maybeIf (row t u1 `sublang` row t u2) (u1, u2)) ss ss
+        candidates = pairsWithFilter (\u1 u2 -> maybeIf (row t u2 `sublang` row t u1) (u1, u2)) ss ss
         defect = triplesWithFilter (\(u1, u2) a v -> maybeIf (not (tableAt t (u1 ++ [a]) v) /\ tableAt t (u2++[a]) v) (a:v)) candidates aa ee
 
 constructHypothesisBollig :: NominalType i => State i -> Automaton (BRow i) i

@@ -2,6 +2,7 @@
 module Bollig where
 
 import AbstractLStar
+import Angluin
 import ObservationTable
 import Teacher
 
@@ -11,7 +12,11 @@ import NLambda
 import qualified Prelude hiding ()
 import Prelude (Bool(..), Maybe(..), ($), (.), (++), fst, show)
 
--- See also NLStar.hs for this hack
+-- So at the moment we only allow sums of the form a + b and a + b + c
+-- Of course we should approximate the powerset a bit better
+-- But for the main examples, we know this is enough!
+-- I (Joshua) believe it is possible to give a finite-orbit
+-- approximation, but the code will not be efficient...
 hackApproximate :: NominalType a => Set a -> Set (Set a)
 hackApproximate set = empty
     `union` map singleton set
@@ -51,7 +56,7 @@ rfsaClosednessTest State{..} = case solve (isEmpty defect) of
 rfsaConsistencyTest :: LearnableAlphabet i => State i -> TestResult i
 rfsaConsistencyTest State{..} = case solve (isEmpty defect) of
     Just True  -> Succes
-    Just False -> trace "Not consistent" $ Failed empty defect
+    Just False -> trace ("Not consistent, defect = " ++ show defect) $ Failed empty defect
     Nothing    -> trace "@@@ Unsolved Formula (rfsaConsistencyTest) @@@" $
                   Failed empty defect
     where
@@ -68,16 +73,9 @@ constructHypothesisBollig State{..} = automaton q a d i f
         d0 = triplesWithFilter (\s a s2 -> maybeIf (row t s2 `sublang` rowa t s a) (row t s, a, row t s2)) ss aa ss
         d = filter (\(q1,a,q2) -> q1 `member` q /\ q2 `member` q) d0
 
--- Copied from the classical DFA-algorithm, column version
-useCECopy :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> State i
-useCECopy teacher state@State{..} ces =
-    trace ("Using ce:" ++ show ces) $
-    let de = sum . map (fromList . tails) $ ces in
-    addColumns teacher de state
-
 makeCompleteBollig :: LearnableAlphabet i => TableCompletionHandler i
 makeCompleteBollig = makeCompleteWith [rfsaClosednessTest, rfsaConsistencyTest]
 
 learnBollig :: LearnableAlphabet i => Teacher i -> Automaton (BRow i) i
-learnBollig teacher = learn makeCompleteBollig useCECopy constructHypothesisBollig teacher initial
+learnBollig teacher = learn makeCompleteBollig useCounterExampleMP constructHypothesisBollig teacher initial
     where initial = constructEmptyState teacher

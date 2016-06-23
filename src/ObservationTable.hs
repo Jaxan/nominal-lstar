@@ -44,7 +44,7 @@ type BRow i = Row i Bool
 -- second is columns. Although the teacher provides us formulas instead of
 -- booleans, we can partition the answers to obtain actual booleans.
 fillTable :: LearnableAlphabet i => Teacher i -> Set [i] -> Set [i] -> BTable i
-fillTable teacher sssa ee = force . Prelude.uncurry union . map2 (map slv) . map2 simplify . partition (\(_, _, f) -> f) $ base
+fillTable teacher sssa ee = Prelude.uncurry union . map2 (map slv) . map2 simplify . partition (\(_, _, f) -> f) $ base
     where
         base = pairsWith (\s e -> (s, e, membership teacher (s++e))) sssa ee
         map2 f (a, b) = (f a, f b)

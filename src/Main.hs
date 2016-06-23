@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RecordWildCards   #-}
 
 import           Examples
@@ -11,6 +9,7 @@ import           NLStar
 import           NLambda
 
 import           Data.List        (inits, tails)
+import           Debug.Trace
 import           Prelude          hiding (and, curry, filter, lookup, map, not,
                                    sum, uncurry)
 
@@ -54,42 +53,35 @@ inconsistency = inconsistencyBartek
 -- This function will (recursively) make the table complete and consistent.
 -- This is in the IO monad purely because I want some debugging information.
 -- (Same holds for many other functions here)
-makeCompleteConsistent :: LearnableAlphabet i => Teacher i -> State i -> IO (State i)
-makeCompleteConsistent teacher state@State{..} = do
+makeCompleteConsistent :: LearnableAlphabet i => Teacher i -> State i -> State i
+makeCompleteConsistent teacher state@State{..} =
     -- inc is the set of rows witnessing incompleteness, that is the sequences
     -- 's1 a' which do not have their equivalents of the form 's2'.
-    let inc = incompleteness state
+    let inc = incompleteness state in
     ite (isNotEmpty inc)
-        (do
-            -- If that set is non-empty, we should add new rows
-            putStrLn "Incomplete!"
+        (   -- If that set is non-empty, we should add new rows
+            trace "Incomplete! Adding rows:" $
             -- These will be the new rows, ...
-            let ds = inc
-            putStr " -> Adding rows: "
-            print ds
-            let state2 = addRows teacher ds state
+            let ds = inc in
+            traceShow ds $
+            let state2 = addRows teacher ds state in
             makeCompleteConsistent teacher state2
         )
-        (do
-            -- inc2 is the set of inconsistencies.
-            let inc2 = inconsistency state
+        (   -- inc2 is the set of inconsistencies.
+            let inc2 = inconsistency state in
             ite (isNotEmpty inc2)
-                (do
-                    -- If that set is non-empty, we should add new columns
-                    putStr "Inconsistent! : "
-                    print inc2
+                (   -- If that set is non-empty, we should add new columns
+                    trace "Inconsistent! Adding columns:" $
                     -- The extensions are in the second component
-                    let de = sum $ map (\((s1,s2,a),es) -> map (a:) es) inc2
-                    putStr " -> Adding columns: "
-                    print de
-                    let state2 = addColumns teacher de state
+                    let de = sum $ map (\((s1,s2,a),es) -> map (a:) es) inc2 in
+                    traceShow de $
+                    let state2 = addColumns teacher de state in
                     makeCompleteConsistent teacher state2
                 )
-                (do
-                    -- If both sets are empty, the table is complete and
+                (   -- If both sets are empty, the table is complete and
                     -- consistent, so we are done.
-                    putStrLn " => Complete + Consistent :D!"
-                    return state
+                    trace " => Complete + Consistent :D!" $
+                    state
                 )
         )
 
@@ -106,48 +98,46 @@ constructHypothesis State{..} = automaton q a d i f
         toform s = forAll id . map fromBool $ s
 
 -- Extends the table with all prefixes of a set of counter examples.
-useCounterExampleAngluin :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> IO (State i)
-useCounterExampleAngluin teacher state@State{..} ces = do
-    putStr "Using ce: "
-    print ces
-    let ds = sum . map (fromList . inits) $ ces
-    putStr " -> Adding rows: "
-    print ds
-    let state2 = addRows teacher ds state
-    return state2
+useCounterExampleAngluin :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> State i
+useCounterExampleAngluin teacher state@State{..} ces =
+    trace "Using ce:" $
+    traceShow ces $
+    let ds = sum . map (fromList . inits) $ ces in
+    trace " -> Adding rows:" $
+    traceShow ds $
+    addRows teacher ds state
 
 -- I am not quite sure whether this variant is due to Rivest & Schapire or Maler & Pnueli.
-useCounterExampleRS :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> IO (State i)
-useCounterExampleRS teacher state@State{..} ces = do
-    putStr "Using ce: "
-    print ces
-    let de = sum . map (fromList . tails) $ ces
-    putStr " -> Adding columns: "
-    print de
-    let state2 = addColumns teacher de state
-    return state2
+useCounterExampleRS :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> State i
+useCounterExampleRS teacher state@State{..} ces =
+    trace "Using ce:" $
+    traceShow ces $
+    let de = sum . map (fromList . tails) $ ces in
+    trace " -> Adding columns:" $
+    traceShow de $
+    addColumns teacher de state
 
-useCounterExample :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> IO (State i)
+useCounterExample :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> State i
 useCounterExample = useCounterExampleRS
 
 -- The main loop, which results in an automaton. Will stop if the hypothesis
 -- exactly accepts the language we are learning.
-loop :: LearnableAlphabet i => Teacher i -> State i -> IO (Automaton (BRow i) i)
-loop teacher s = do
-    putStrLn "##################"
-    putStrLn "1. Making it complete and consistent"
-    s <- makeCompleteConsistent teacher s
-    putStrLn "2. Constructing hypothesis"
-    let h = constructHypothesis s
-    print h
-    putStr "3. Equivalent? "
-    let eq = equivalent teacher h
-    print eq
+loop :: LearnableAlphabet i => Teacher i -> State i -> Automaton (BRow i) i
+loop teacher s =
+    trace "##################" $
+    trace "1. Making it complete and consistent" $
+    let s2 = makeCompleteConsistent teacher s in
+    trace "2. Constructing hypothesis" $
+    let h = constructHypothesis s2 in
+    traceShow h $
+    trace "3. Equivalent? " $
+    let eq = equivalent teacher h in
+    traceShow eq $
     case eq of
-        Nothing -> return h
+        Nothing -> h
         Just ce -> do
-            s <- useCounterExample teacher s ce
-            loop teacher s
+            let s3 = useCounterExample teacher s2 ce
+            loop teacher s3
 
 constructEmptyState :: LearnableAlphabet i => Teacher i -> State i
 constructEmptyState teacher =
@@ -158,14 +148,13 @@ constructEmptyState teacher =
     let t = fillTable teacher (ss `union` ssa) ee in
     State{..}
 
-learn :: LearnableAlphabet i => Teacher i -> IO (Automaton (BRow i) i)
-learn teacher = do
-    let s = constructEmptyState teacher
-    loop teacher s
+learn :: LearnableAlphabet i => Teacher i -> Automaton (BRow i) i
+learn teacher = loop teacher s
+    where s = constructEmptyState teacher
 
 -- Initializes the table and runs the algorithm.
 main :: IO ()
 main = do
-    h <- learn exampleTeacher
+    let h = learn (teacherWithTarget (Examples.fifoExample 3))
     putStrLn "Finished! Final hypothesis ="
     print h

@@ -13,8 +13,9 @@ import           Teacher
 
 import           Control.DeepSeq (NFData, force)
 import           Data.Maybe   (fromJust)
+import           Debug.Trace  (trace)
 import           GHC.Generics (Generic)
-import           Prelude      (Bool (..), Eq, Ord, Show, ($), (++), (.), uncurry)
+import           Prelude      (Bool (..), Eq, Ord, Show (..), ($), (++), (.), uncurry)
 import qualified Prelude      ()
 
 
@@ -35,6 +36,9 @@ row t is = mapFilter (\((a,b),c) -> maybeIf (eq is a) (b,c)) t
 -- `rowa is a` is the row for the one letter extensions
 rowa :: (NominalType i, NominalType o) => Table i o -> [i] -> i -> Fun [i] o
 rowa t is a = row t (is ++ [a])
+
+tableAt :: NominalType i => Table i Bool -> [i] -> [i] -> Formula
+tableAt t s e = singleton True `eq` mapFilter (\((a,b),c) -> maybeIf (s `eq` a /\ b `eq` e) c) t
 
 -- Teacher is restricted to Bools at the moment
 type BTable i = Table i Bool
@@ -68,7 +72,9 @@ instance NominalType i => Conditional (State i) where
 
 -- Precondition: the set together with the current rows is prefix closed
 addRows :: LearnableAlphabet i => Teacher i -> Set [i] -> State i -> State i
-addRows teacher ds0 state@State{..} = state {t = t `union` dt, ss = ss `union` ds, ssa = ssa `union` dsa}
+addRows teacher ds0 state@State{..} =
+    trace ("add rows: " ++ show ds) $
+    state {t = t `union` dt, ss = ss `union` ds, ssa = ssa `union` dsa}
     where
         -- first remove redundancy
         ds = ds0 \\ ss
@@ -78,9 +84,10 @@ addRows teacher ds0 state@State{..} = state {t = t `union` dt, ss = ss `union` d
         -- note that `ds ee` is already filled
         dt = fillTable teacher dsa ee
 
-
 addColumns :: LearnableAlphabet i => Teacher i -> Set [i] -> State i -> State i
-addColumns teacher de0 state@State{..} = state {t = t `union` dt, ee = ee `union` de}
+addColumns teacher de0 state@State{..} =
+    trace ("add columns: " ++ show de) $
+    state {t = t `union` dt, ee = ee `union` de}
     where
         -- first remove redundancy
         de = de0 \\ ee

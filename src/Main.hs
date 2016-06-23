@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards   #-}
 
+import           Bollig
 import           Examples
 import           Functions
 import           ObservationTable
@@ -8,6 +9,7 @@ import           NLStar
 
 import           NLambda
 
+import Control.DeepSeq
 import           Data.List        (inits, tails)
 import           Debug.Trace
 import           Prelude          hiding (and, curry, filter, lookup, map, not,
@@ -124,6 +126,9 @@ useCounterExample = useCounterExampleRS
 -- exactly accepts the language we are learning.
 loop :: LearnableAlphabet i => Teacher i -> State i -> Automaton (BRow i) i
 loop teacher s =
+    -- I put a deepseq here in order to let all traces be evaluated
+    -- in a decent order. Also it will be used anyways.
+    deepseq s $
     trace "##################" $
     trace "1. Making it complete and consistent" $
     let s2 = makeCompleteConsistent teacher s in

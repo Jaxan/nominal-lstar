@@ -22,35 +22,16 @@ closednessTest State{..} = case solve (isEmpty defect) of
         hasEqRow = contains sss . row t      -- has equivalent upper row
         defect = filter (not . hasEqRow) ssa -- all rows without equivalent guy
 
--- We can determine its consistency with the following
-consistencyTestJ :: NominalType i => State i -> TestResult i -- Set (([i], [i], i), Set [i])
-consistencyTestJ State{..} = case solve (isEmpty defect) of
+-- We look for inconsistencies and return columns witnessing it
+consistencyTestDirect :: NominalType i => State i -> TestResult i
+consistencyTestDirect State{..} = case solve (isEmpty defect) of
     Just True  -> Succes
-    Just False -> trace "Not consistent" $ Failed empty columns
+    Just False -> trace "Not consistent" $ Failed empty defect
     where
-        -- true for equal rows, but unequal extensions
-        -- we can safely skip equal sequences
-        candidate s1 s2 a = s1 `neq` s2
-                            /\ row t s1 `eq` row t s2
-                            /\ rowa t s1 a `neq` rowa t s2 a
-        defect = triplesWithFilter (
-                     \s1 s2 a -> maybeIf (candidate s1 s2 a) ((s1, s2, a), discrepancy (rowa t s1 a) (rowa t s2 a))
-                 ) ss ss aa
-        columns = sum $ map (\((s1,s2,a),es) -> map (a:) es) defect
+        candidates = pairsWithFilter (\u1 u2 -> maybeIf (u1 `neq` u2 /\ row t u2 `eq` row t u1) (u1, u2)) ss ss
+        defect = triplesWithFilter (\(u1, u2) a v -> maybeIf (tableAt t (u1 ++ [a]) v `diff` tableAt t (u2 ++ [a]) v) (a:v)) candidates aa ee
+        diff a b = not (a `iff` b)
 
--- Bartek's faster version
-consistencyTestB :: NominalType i => State i -> TestResult i -- Set (([i], [i], i), Set [i])
-consistencyTestB State{..} = case solve (isEmpty defect) of
-    Just True  -> Succes
-    Just False -> trace "Not consistent" $ Failed empty columns
-    where
-        rowPairs = pairsWithFilter (\s1 s2 -> maybeIf (candidate0 s1 s2) (s1,s2)) ss ss
-        candidate0 s1 s2 = s1 `neq` s2 /\ row t s1 `eq` row t s2
-        candidate1 s1 s2 a = rowa t s1 a `neq` rowa t s2 a
-        defect = pairsWithFilter (
-                     \(s1, s2) a -> maybeIf (candidate1 s1 s2 a) ((s1, s2, a), discrepancy (rowa t s1 a) (rowa t s2 a))
-                 ) rowPairs aa
-        columns = sum $ map (\((s1,s2,a),es) -> map (a:) es) defect
 
 -- Given a C&C table, constructs an automaton. The states are given by 2^E (not
 -- necessarily equivariant functions)
@@ -79,8 +60,9 @@ useCounterExampleMP teacher state@State{..} ces =
     let de = sum . map (fromList . tails) $ ces in
     addColumns teacher de state
 
+-- Putting the above together in a learning algorithm
 makeCompleteAngluin :: LearnableAlphabet i => TableCompletionHandler i
-makeCompleteAngluin = makeCompleteWith [closednessTest, consistencyTestB]
+makeCompleteAngluin = makeCompleteWith [closednessTest, consistencyTestDirect]
 
 -- Default: use counter examples in columns, which is slightly faster
 learnAngluin :: LearnableAlphabet i => Teacher i -> Automaton (BRow i) i
@@ -91,3 +73,37 @@ learnAngluin teacher = learn makeCompleteAngluin useCounterExampleMP constructHy
 learnAngluinRows :: LearnableAlphabet i => Teacher i -> Automaton (BRow i) i
 learnAngluinRows teacher = learn makeCompleteAngluin useCounterExampleAngluin constructHypothesis teacher initial
     where initial = constructEmptyState teacher
+
+
+-- Below are some variations of the above functions with different
+-- performance characteristics.
+
+-- Joshua's slower version
+consistencyTestJ :: NominalType i => State i -> TestResult i
+consistencyTestJ State{..} = case solve (isEmpty defect) of
+    Just True  -> Succes
+    Just False -> trace "Not consistent" $ Failed empty columns
+    where
+        -- true for equal rows, but unequal extensions
+        -- we can safely skip equal sequences
+        candidate s1 s2 a = s1 `neq` s2
+                            /\ row t s1 `eq` row t s2
+                            /\ rowa t s1 a `neq` rowa t s2 a
+        defect = triplesWithFilter (
+                     \s1 s2 a -> maybeIf (candidate s1 s2 a) ((s1, s2, a), discrepancy (rowa t s1 a) (rowa t s2 a))
+                 ) ss ss aa
+        columns = sum $ map (\((s1,s2,a),es) -> map (a:) es) defect
+
+-- Bartek's faster version
+consistencyTestB :: NominalType i => State i -> TestResult i
+consistencyTestB State{..} = case solve (isEmpty defect) of
+    Just True  -> Succes
+    Just False -> trace "Not consistent" $ Failed empty columns
+    where
+        rowPairs = pairsWithFilter (\s1 s2 -> maybeIf (candidate0 s1 s2) (s1,s2)) ss ss
+        candidate0 s1 s2 = s1 `neq` s2 /\ row t s1 `eq` row t s2
+        candidate1 s1 s2 a = rowa t s1 a `neq` rowa t s2 a
+        defect = pairsWithFilter (
+                     \(s1, s2) a -> maybeIf (candidate1 s1 s2 a) ((s1, s2, a), discrepancy (rowa t s1 a) (rowa t s2 a))
+                 ) rowPairs aa
+        columns = sum $ map (\((s1,s2,a),es) -> map (a:) es) defect

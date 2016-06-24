@@ -73,9 +73,3 @@ constructEmptyState teacher =
     let ee = singleton [] in
     let t = fillTable teacher (ss `union` ssa) ee in
     State{..}
-
---loopClassicalAngluin = loop makeCompleteConsistent useCounterExampleAngluin constructHypothesis
---loopClassicalMP = loop makeCompleteConsistent useCounterExampleRS constructHypothesis
---loopNonDet = loop makeCompleteConsistentNonDet useCounterExampleRS constructHypothesisNonDet
-
---learn loop teacher = loop teacher (constructEmptyState teacher)

@@ -19,6 +19,18 @@ import           Prelude          hiding (and, curry, filter, lookup, map, not,
    Joshua argues this version is closer to the categorical perspective.
 -}
 
+-- So at the moment we only allow sums of the form a + b and a + b + c
+-- Of course we should approximate the powerset a bit better
+-- But for the main examples, we know this is enough!
+-- I (Joshua) believe it is possible to give a finite-orbit
+-- approximation, but the code will not be efficient...
+hackApproximate :: NominalType a => Set a -> Set (Set a)
+hackApproximate set = empty
+    `union` map singleton set
+    `union` pairsWith (\x y -> singleton x `union` singleton y) set set
+    `union` triplesWith (\x y z -> singleton x `union` singleton y `union` singleton z) set set set
+
+
 -- lifted row functions
 rowP t = rowUnion . map (row t)
 rowPa t set a = rowUnion . map (\s -> rowa t s a) $ set

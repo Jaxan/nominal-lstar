@@ -12,17 +12,6 @@ import NLambda
 import qualified Prelude hiding ()
 import Prelude (Bool(..), Maybe(..), ($), (.), (++), fst, show)
 
--- So at the moment we only allow sums of the form a + b and a + b + c
--- Of course we should approximate the powerset a bit better
--- But for the main examples, we know this is enough!
--- I (Joshua) believe it is possible to give a finite-orbit
--- approximation, but the code will not be efficient...
-hackApproximate :: NominalType a => Set a -> Set (Set a)
-hackApproximate set = empty
-    `union` map singleton set
-    `union` pairsWith (\x y -> singleton x `union` singleton y) set set
-    `union` triplesWith (\x y z -> singleton x `union` singleton y `union` singleton z) set set set
-
 rowUnion :: NominalType i => Set (BRow i) -> BRow i
 rowUnion set = Prelude.uncurry union . setTrueFalse . partition (\(_, f) -> f) $ map (\is -> (is, exists fromBool (mapFilter (\(is2, b) -> maybeIf (is `eq` is2) b) flatSet))) allIs
     where
@@ -31,11 +20,6 @@ rowUnion set = Prelude.uncurry union . setTrueFalse . partition (\(_, f) -> f) $
         setTrueFalse (trueSet, falseSet) = (map (setSecond True) trueSet, map (setSecond False) falseSet)
         setSecond a (x, _) = (x, a)
 
-primes :: NominalType a => (Set a -> a) -> Set a -> Set a
-primes alg rows = filter (\r -> r `notMember` sumsWithout r) rows
-    where
-        sumsWithout r = map alg $ hackApproximate (rows \\ singleton r)
-
 boolImplies :: Bool -> Bool -> Bool
 boolImplies True False = False
 boolImplies _ _ = True
@@ -43,20 +27,26 @@ boolImplies _ _ = True
 sublang :: NominalType i => BRow i -> BRow i -> Formula
 sublang r1 r2 = forAll fromBool $ pairsWithFilter (\(i1, f1) (i2, f2) -> maybeIf (i1 `eq` i2) (f1 `boolImplies` f2)) r1 r2
 
-rfsaClosednessTest :: LearnableAlphabet i => State i -> TestResult i
-rfsaClosednessTest State{..} = case solve (isEmpty defect) of
+sublangs :: NominalType i => BRow i -> Set (BRow i) -> Set (BRow i)
+sublangs r set = filter (\r2 -> r2 `sublang` r) set
+
+-- Infinitary version ?
+rfsaClosednessTest2 :: LearnableAlphabet i => State i -> TestResult i
+rfsaClosednessTest2 State{..} = case solve (isEmpty defect) of
     Just True  -> Succes
     Just False -> trace "Not closed" $ Failed defect empty
     Nothing    -> trace "@@@ Unsolved Formula (rfsaClosednessTest) @@@" $
                   Failed defect empty
     where
-        defect = pairsWithFilter (\u a -> maybeIf (rowa t u a `member` primesDifference) (u ++ [a])) ss aa
-        primesDifference = primes rowUnion (map (row t) $ ss `union` ssa) \\ map (row t) ss
+        defect = pairsWithFilter (\u a -> maybeIf (rowa t u a `neq` rowUnion (sublangs (rowa t u a) primesUpp)) (u ++ [a])) ss aa
+        primesUpp = filter (\r -> r `neq` rowUnion (sublangs r (allRows \\ orbit [] r))) allRowsUpp
+        allRowsUpp = map (row t) ss
+        allRows = allRowsUpp `union` map (row t) ssa
 
 rfsaConsistencyTest :: LearnableAlphabet i => State i -> TestResult i
 rfsaConsistencyTest State{..} = case solve (isEmpty defect) of
     Just True  -> Succes
-    Just False -> trace ("Not consistent, defect = " ++ show defect) $ Failed empty defect
+    Just False -> trace "Not consistent" $ Failed empty defect
     Nothing    -> trace "@@@ Unsolved Formula (rfsaConsistencyTest) @@@" $
                   Failed empty defect
     where
@@ -66,15 +56,18 @@ rfsaConsistencyTest State{..} = case solve (isEmpty defect) of
 constructHypothesisBollig :: NominalType i => State i -> Automaton (BRow i) i
 constructHypothesisBollig State{..} = automaton q a d i f
     where
-        q = primes rowUnion (map (row t) ss)
+        q = primesUpp
         a = aa
         i = filter (\r -> r `sublang` row t []) q
         f = filter (\r -> singleton True `eq` mapFilter (\(i,b) -> maybeIf (i `eq` []) b) r) q
         d0 = triplesWithFilter (\s a s2 -> maybeIf (row t s2 `sublang` rowa t s a) (row t s, a, row t s2)) ss aa ss
         d = filter (\(q1,a,q2) -> q1 `member` q /\ q2 `member` q) d0
+        primesUpp = filter (\r -> r `neq` rowUnion (sublangs r (allRows \\ orbit [] r))) allRowsUpp
+        allRowsUpp = map (row t) ss
+        allRows = allRowsUpp `union` map (row t) ssa
 
 makeCompleteBollig :: LearnableAlphabet i => TableCompletionHandler i
-makeCompleteBollig = makeCompleteWith [rfsaClosednessTest, rfsaConsistencyTest]
+makeCompleteBollig = makeCompleteWith [rfsaClosednessTest2, rfsaConsistencyTest]
 
 learnBollig :: LearnableAlphabet i => Teacher i -> Automaton (BRow i) i
 learnBollig teacher = learn makeCompleteBollig useCounterExampleMP constructHypothesisBollig teacher initial

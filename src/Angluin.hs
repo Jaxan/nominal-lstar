@@ -28,7 +28,8 @@ consistencyTestDirect State{..} = case solve (isEmpty defect) of
     Just True  -> Succes
     Just False -> trace "Not consistent" $ Failed empty defect
     where
-        candidates = pairsWithFilter (\u1 u2 -> maybeIf (u1 `neq` u2 /\ row t u2 `eq` row t u1) (u1, u2)) ss ss
+        ssRows = map (\u -> (u, row t u)) ss
+        candidates = pairsWithFilter (\(u1,r1) (u2,r2) -> maybeIf (u1 `neq` u2 /\ r1 `eq` r2) (u1, u2)) ssRows ssRows
         defect = triplesWithFilter (\(u1, u2) a v -> maybeIf (tableAt t (u1 ++ [a]) v `diff` tableAt t (u2 ++ [a]) v) (a:v)) candidates aa ee
         diff a b = not (a `iff` b)
 

@@ -14,26 +14,19 @@ import           Data.List        (inits, tails)
 import           Prelude          hiding (and, curry, filter, lookup, map, not,
                                    sum)
 
-{- This is not NL* from the Bollig et al paper. This is a more abstract version
-   wich uses different notions for closedness and consistency.
-   Joshua argues this version is closer to the categorical perspective.
+{- This is not NL* from the Bollig et al paper. This is a very naive
+   approximation. You see, the consistency in their paper is quite weak,
+   and in fact does not determine a well defined automaton (the constructed
+   automaton does not even agree with the table of observations). They fix
+   it by adding counter examples as columns instead of rows. This way the
+   teacher will point out inconsistencies and columns are added then.
+
+   Here, I propose an algorithm which does not check consistency at all!
+   Sounds a bit crazy, but the teacher kind of takes care of that. Of course
+   I do not know whether this will terminate. But it's nice to experiment with.
+   Also I do not 'minimize' the NFA by taking only prime rows. Saves a lot of
+   checking but makes the result not minimal (whatever that would mean).
 -}
-
--- So at the moment we only allow sums of the form a + b and a + b + c
--- Of course we should approximate the powerset a bit better
--- But for the main examples, we know this is enough!
--- I (Joshua) believe it is possible to give a finite-orbit
--- approximation, but the code will not be efficient...
-hackApproximate :: NominalType a => Set a -> Set (Set a)
-hackApproximate set = empty
-    `union` map singleton set
-    `union` pairsWith (\x y -> singleton x `union` singleton y) set set
-    `union` triplesWith (\x y z -> singleton x `union` singleton y `union` singleton z) set set set
-
-
--- lifted row functions
-rowP t = rowUnion . map (row t)
-rowPa t set a = rowUnion . map (\s -> rowa t s a) $ set
 
 -- We can determine its completeness with the following
 -- It returns all witnesses (of the form sa) for incompleteness
@@ -42,26 +35,10 @@ nonDetClosednessTest State{..} = case solve (isEmpty defect) of
     Just True  -> Succes
     Just False -> trace "Not closed" $ Failed defect empty
     where
-        sss = map (rowP t) . hackApproximate $ ss
-        -- true if the sequence sa has an equivalent row in ss
-        hasEqRow = contains sss . row t
-        defect = filter (not . hasEqRow) ssa
+        allRows = map (row t) ss
+        hasSum r = r `eq` rowUnion (sublangs r allRows)
+        defect = filter (not . hasSum . row t) ssa
 
-nonDetConsistencyTest :: NominalType i => State i -> TestResult i -- Set ((Set [i], Set [i], i), Set [i])
-nonDetConsistencyTest State{..} = case solve (isEmpty defect) of
-    Just True  -> Succes
-    Just False -> trace "Not consistent" $ Failed empty columns
-    where
-        rowPairs = pairsWithFilter (\s1 s2 -> maybeIf (candidate0 s1 s2) (s1,s2)) (hackApproximate ss) (hackApproximate ss)
-        candidate0 s1 s2 = s1 `neq` s2 /\ rowP t s1 `eq` rowP t s2
-        candidate1 s1 s2 a = rowPa t s1 a `neq` rowPa t s2 a
-        defect = pairsWithFilter (
-                     \(s1, s2) a -> maybeIf (candidate1 s1 s2 a) ((s1, s2, a), discrepancy (rowPa t s1 a) (rowPa t s2 a))
-                 ) rowPairs aa
-        columns = sum $ map (\((s1,s2,a),es) -> map (a:) es) defect
-
--- Given a C&C table, constructs an automaton. The states are given by 2^E (not
--- necessarily equivariant functions)
 constructHypothesisNonDet :: NominalType i => State i -> Automaton (BRow i) i
 constructHypothesisNonDet State{..} = automaton q a d i f
     where
@@ -69,11 +46,10 @@ constructHypothesisNonDet State{..} = automaton q a d i f
         a = aa
         d = triplesWithFilter (\s a s2 -> maybeIf (row t s2 `sublang` rowa t s a) (row t s, a, row t s2)) ss aa ss
         i = singleton $ row t []
-        f = mapFilter (\s -> maybeIf (toform $ apply t (s, [])) (row t s)) ss
-        toform s = forAll id . map fromBool $ s
+        f = mapFilter (\s -> maybeIf (tableAt t s []) (row t s)) ss
 
 makeCompleteNonDet :: LearnableAlphabet i => TableCompletionHandler i
-makeCompleteNonDet = makeCompleteWith [nonDetClosednessTest, nonDetConsistencyTest]
+makeCompleteNonDet = makeCompleteWith [nonDetClosednessTest]
 
 -- Default: use counter examples in columns, which is slightly faster
 learnNonDet :: LearnableAlphabet i => Teacher i -> Automaton (BRow i) i

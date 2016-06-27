@@ -6,13 +6,14 @@ module Teacher where
 import           NLambda hiding (alphabet)
 import qualified NLambda (alphabet)
 
+import Debug.Trace
 -- Explicit Prelude, as NLambda has quite some clashes
 import           Data.Function           (fix)
 import           Data.List               (zip, (!!), reverse)
 import           Data.Maybe              (Maybe (..))
 import           Prelude                 (Bool (..), Int, Read, Show, error,
                                           length, return, ($), (++), (-), (<),
-                                          (==))
+                                          (==), (.), (<=))
 import qualified Prelude
 import Control.Monad.Identity (Identity(..))
 
@@ -45,7 +46,16 @@ data Teacher i = Teacher
 teacherWithTarget :: (NominalType i, NominalType q) => Automaton q i -> Teacher i
 teacherWithTarget aut = Teacher
     { membership = automaticMembership aut
-    , equivalent = automaticEquivalent aut
+    , equivalent = automaticEquivalent bisim aut
+    , alphabet   = automaticAlphabet aut
+    }
+
+-- 1b. This is a fully automatic teacher, which has an internal automaton
+-- Might work for NFAs, not really tested
+teacherWithTargetNonDet :: (Show i, Show q, NominalType i, NominalType q) => Int -> Automaton q i -> Teacher i
+teacherWithTargetNonDet n aut = Teacher
+    { membership = automaticMembership aut
+    , equivalent = automaticEquivalent (bisimNonDet n) aut
     , alphabet   = automaticAlphabet aut
     }
 
@@ -73,12 +83,12 @@ teacherWithTargetAndIO aut = Teacher
 
 -- Implementations of above functions
 automaticMembership aut input = accepts aut input
-automaticEquivalent aut hypo = case solve isEq of
+automaticEquivalent bisimlator aut hypo = case solve isEq of
         Nothing -> error "should be solved"
         Just True -> Nothing
         Just False -> Just bisimRes
         where
-            bisimRes = bisim aut hypo
+            bisimRes = bisimlator aut hypo
             isEq = isEmpty bisimRes
 automaticAlphabet aut = NLambda.alphabet aut
 
@@ -115,6 +125,49 @@ bisim aut1 aut2 = runIdentity $ go empty (pairsWith addEmptyWord (initialStates 
         getRevWord (w, _, _) = reverse w
         addEmptyWord x y = ([], x, y)
 
+-- Attempt at using a bisimlution up to to proof bisimulation between NFAs
+-- Because why not? Inspired by the Hacking non-determinism paper
+-- But they only consider finite sums (which is enough for finite sets)
+-- Here I have to do a bit of trickery, which is hopefully correct.
+-- I think it is correct, but not yet complete enough, we need more up-to.
+bisimNonDet :: (Show i, Show q1, Show q2, NominalType i, NominalType q1, NominalType q2) => Int -> Automaton q1 i -> Automaton q2 i -> Set [i]
+bisimNonDet n aut1 aut2 = runIdentity $ go empty (singleton ([], initialStates aut1, initialStates aut2))
+    where
+        go rel todo0 = do
+            -- if elements are too long, we ignore them
+            let todo0b = filter (\(w,_,_) -> fromBool (length w <= n)) todo0
+            -- if elements are already in R, we can skip them
+            let todo1 = filter (\(_, x, y) -> (x, y) `notMember` rel) todo0b
+            -- now we are going to do a up-to thingy
+            -- we look at all subsets x2 of x occuring in R (similarly for y)
+            let xbar x = mapFilter (\(x2, _) -> maybeIf (x2 `isSubsetOf` x) x2) rel
+            let ybar y = mapFilter (\(_, y2) -> maybeIf (y2 `isSubsetOf` y) y2) rel
+            -- and then the sums are expressed by these formulea kind of
+            let xform x y = x `eq` sum (xbar x) /\ forAll (\x2 -> exists (\y2 -> rel `contains` (x2, y2)) (ybar y)) (xbar x)
+            let yform x y = y `eq` sum (ybar y) /\ forAll (\y2 -> exists (\x2 -> rel `contains` (x2, y2)) (xbar x)) (ybar y)
+            let notSums x y = not (xform x y /\ yform x y)
+            -- filter out things expressed as sums
+            let todo2 = filter (\(_, x, y) -> notSums x y) todo1
+            -- split into correct pairs and wrong pairs
+            let (cont, ces) = partition (\(_, x, y) -> (x `intersect` (finalStates aut1)) <==> (y `intersect` (finalStates aut2))) todo2
+            let aa = NLambda.alphabet aut1
+            -- the good pairs should make one step
+            let dtodo = pairsWith (\(w, x, y) a -> (a:w, sumMap (d aut1 a) x, sumMap (d aut2 a) y)) cont aa
+            -- if there are wrong pairs
+            --trace "go" $ traceShow rel $ traceShow todo0 $ traceShow todo1 $ traceShow todo2 $ traceShow cont $
+            ite (isNotEmpty ces)
+                -- then return counter examples
+                (return $ map getRevWord ces)
+                -- else continue with good pairs
+                (ite (isEmpty dtodo)
+                    (return empty)
+                    (go (rel `union` map stripWord cont) (dtodo))
+                )
+        d aut a x = mapFilter (\(s, l, t) -> maybeIf (s `eq` x /\ l `eq` a) t) (delta aut)
+        stripWord (_, x, y) = (x, y)
+        getRevWord (w, _, _) = reverse w
+        addEmptyWord x y = ([], x, y)
+        sumMap f = sum . (map f)
 
 ioMembership :: (Show i, NominalType i) => [i] -> Formula
 ioMembership input = unsafePerformIO $ do

@@ -88,6 +88,11 @@ instance NominalType i => Conditional (State i) where
         toTup State{..} = (t,ss,ssa,ee,aa)
         fromTup (t,ss,ssa,ee,aa) = State{..}
 
+instance (Ord i, Contextual i) => Contextual (State i) where
+    when f s = fromTup (when f (toTup s)) where
+        toTup State{..} = (t,ss,ssa,ee,aa)
+        fromTup (t,ss,ssa,ee,aa) = State{..}
+
 -- Precondition: the set together with the current rows is prefix closed
 addRows :: LearnableAlphabet i => Teacher i -> Set [i] -> State i -> State i
 addRows teacher ds0 state@State{..} =

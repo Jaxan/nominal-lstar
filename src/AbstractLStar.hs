@@ -32,8 +32,8 @@ makeCompleteWith tests teacher state0 = go tests state0
             Succes -> go ts state
             -- Otherwise we add the changes
             Failed newRows newColumns ->
-                let state2 = addRows teacher newRows state in
-                let state3 = addColumns teacher newColumns state2 in
+                let state2 = simplify $ addRows teacher newRows state in
+                let state3 = simplify $ addColumns teacher newColumns state2 in
                 -- restart the whole business
                 makeCompleteWith tests teacher state3
 

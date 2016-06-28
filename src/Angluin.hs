@@ -36,8 +36,8 @@ consistencyTestDirect State{..} = case solve (isEmpty defect) of
 
 -- Given a C&C table, constructs an automaton. The states are given by 2^E (not
 -- necessarily equivariant functions)
-constructHypothesis :: NominalType i => State i -> Automaton (BRow i) i
-constructHypothesis State{..} = automaton q a d i f
+constructHypothesis :: LearnableAlphabet i => State i -> Automaton (BRow i) i
+constructHypothesis State{..} = simplify $ automaton q a d i f
     where
         q = map (row t) ss
         a = aa

@@ -3,7 +3,7 @@
 
 module Teacher where
 
-import           NLambda hiding (alphabet)
+import           NLambda hiding (alphabet, when)
 import qualified NLambda (alphabet)
 
 import Debug.Trace
@@ -13,9 +13,13 @@ import           Data.List               (zip, (!!), reverse)
 import           Data.Maybe              (Maybe (..))
 import           Prelude                 (Bool (..), Int, Read, Show, error,
                                           length, return, ($), (++), (-), (<),
-                                          (==), (.), (<=))
+                                          (==), (.), (<=), (+), show, seq)
 import qualified Prelude
 import Control.Monad.Identity (Identity(..))
+import Control.Monad (when)
+import Data.IORef (IORef, readIORef, newIORef, writeIORef)
+import System.IO.Unsafe (unsafePerformIO)
+import qualified Data.Set as Set
 
 -- Used in the IO teacher
 import           System.Console.Haskeline
@@ -80,6 +84,51 @@ teacherWithTargetAndIO aut = Teacher
     , alphabet   = atoms
     }
 
+-- 4. A teacher with state (hacked, since the types don't allow for it)
+-- Useful for debugging and so on, but *very very hacky*!
+countingTeacher :: (Show i, NominalType i) => Teacher i -> Teacher i
+countingTeacher delegate = Teacher
+    { membership = \q -> increaseMQ q `seq` membership delegate q
+    , equivalent = \a -> increaseEQ a `seq` equivalent delegate a
+    , alphabet   = alphabet delegate
+    }
+    where
+        {-# NOINLINE increaseEQ #-}
+        increaseEQ _ = unsafePerformIO $ do
+            i <- readIORef eqCounter
+            let j = i + 1
+            writeIORef eqCounter j
+            return j
+        {-# NOINLINE increaseMQ #-}
+        increaseMQ q = unsafePerformIO $ do
+            -- new <- notInCache q
+            -- when new $ do
+                l <- readIORef mqCounter
+                let len = length q
+                let sup = length $ leastSupport q
+                let l2 = (len, sup) : l
+                writeIORef mqCounter l2
+        -- {-# NOINLINE cache #-}
+        -- cache = unsafePerformIO $ newIORef Set.empty
+        -- {-# NOINLINE notInCache #-}
+        -- notInCache q = do
+        --     oldCache <- readIORef cache
+        --     case q `Set.member` oldCache of
+        --         True -> return False
+        --         False -> do
+        --             let newCache = Set.insert q oldCache
+        --             writeIORef cache newCache
+        --             return True
+
+-- HACK: Counts number of equivalence queries
+eqCounter :: IORef Int
+{-# NOINLINE eqCounter #-}
+eqCounter = unsafePerformIO $ newIORef 0
+
+-- HACK: Keeps track of membership queries with: length, size of support
+mqCounter :: IORef [(Int, Int)]
+{-# NOINLINE mqCounter #-}
+mqCounter = unsafePerformIO $ newIORef []
 
 -- Implementations of above functions
 automaticMembership aut input = accepts aut input

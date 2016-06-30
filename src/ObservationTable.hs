@@ -14,7 +14,7 @@ import           Control.DeepSeq (NFData, force)
 import           Data.Maybe   (fromJust)
 import           Debug.Trace  (trace)
 import           GHC.Generics (Generic)
-import           Prelude      (Bool (..), Eq, Ord, Show (..), ($), (++), (.), uncurry)
+import           Prelude      (Bool (..), Eq, Ord, Show (..), ($), (++), (.), uncurry, id)
 import qualified Prelude      ()
 
 
@@ -68,7 +68,10 @@ type BRow i = Row i Bool
 fillTable :: LearnableAlphabet i => Teacher i -> Set [i] -> Set [i] -> BTable i
 fillTable teacher sssa ee = Prelude.uncurry union . map2 (map slv) . map2 simplify . partition (\(_, _, f) -> f) $ base
     where
-        base = pairsWith (\s e -> (s, e, membership teacher (s++e))) sssa ee
+        base0 = pairsWith (\s e -> (s++e)) sssa ee
+        base1 = membership teacher base0
+        base1b s e = forAll id $ mapFilter (\(i,f) -> maybeIf (i `eq` (s++e)) f)  base1
+        base = pairsWith (\s e -> (s, e, base1b s e)) sssa ee
         map2 f (a, b) = (f a, f b)
         slv (a,b,f) = ((a,b), fromJust . solve $ f)
 

@@ -92,7 +92,7 @@ teacherWithTargetAndIO aut = Teacher
 
 -- 4. A teacher with state (hacked, since the types don't allow for it)
 -- Useful for debugging and so on, but *very very hacky*!
-countingTeacher :: (Show i, NominalType i) => Teacher i -> Teacher i
+countingTeacher :: (Show i, Contextual i, NominalType i) => Teacher i -> Teacher i
 countingTeacher delegate = Teacher
     { membership = \qs -> increaseMQ qs `seq` membership delegate qs
     , equivalent = \a -> increaseEQ a `seq` equivalent delegate a
@@ -109,7 +109,7 @@ countingTeacher delegate = Teacher
         increaseMQ q = unsafePerformIO $ do
             new <- newOrbitsInCache q
             l <- readIORef mqCounter
-            let l2 = fromVariant new : l
+            let l2 = new : l
             writeIORef mqCounter l2
         {-# NOINLINE cache #-}
         cache = unsafePerformIO $ newIORef empty
@@ -118,7 +118,7 @@ countingTeacher delegate = Teacher
             oldCache <- readIORef cache
             let newQs = qs \\ oldCache
             writeIORef cache (oldCache `union` qs)
-            return $ setOrbitsNumber newQs
+            return $ setOrbitsMaxNumber newQs
 
 -- HACK: Counts number of equivalence queries
 eqCounter :: IORef Int

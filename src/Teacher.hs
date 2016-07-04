@@ -100,24 +100,25 @@ countingTeacher delegate = Teacher
     }
     where
         {-# NOINLINE increaseEQ #-}
-        increaseEQ _ = unsafePerformIO $ do
+        increaseEQ a = unsafePerformIO $ do
             i <- readIORef eqCounter
             let j = i + 1
             writeIORef eqCounter j
-            return j
+            return a
         {-# NOINLINE increaseMQ #-}
         increaseMQ q = unsafePerformIO $ do
             new <- newOrbitsInCache q
             l <- readIORef mqCounter
             let l2 = new : l
             writeIORef mqCounter l2
+            return q
         {-# NOINLINE cache #-}
         cache = unsafePerformIO $ newIORef empty
         {-# NOINLINE newOrbitsInCache #-}
         newOrbitsInCache qs = do
             oldCache <- readIORef cache
-            let newQs = qs \\ oldCache
-            writeIORef cache (oldCache `union` qs)
+            let newQs = simplify $ qs \\ oldCache
+            writeIORef cache (simplify $ oldCache `union` qs)
             return $ setOrbitsMaxNumber newQs
 
 -- HACK: Counts number of equivalence queries

@@ -30,7 +30,6 @@ sublang r1 r2 = forAll fromBool $ pairsWithFilter (\(i1, f1) (i2, f2) -> maybeIf
 sublangs :: NominalType i => BRow i -> Set (BRow i) -> Set (BRow i)
 sublangs r set = filter (\r2 -> r2 `sublang` r) set
 
--- Infinitary version ?
 rfsaClosednessTest2 :: LearnableAlphabet i => State i -> TestResult i
 rfsaClosednessTest2 State{..} = case solve (isEmpty defect) of
     Just True  -> Succes

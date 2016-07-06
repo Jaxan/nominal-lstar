@@ -29,7 +29,6 @@ apply f a1 = mapFilter (\(a2, b) -> maybeIf (eq a1 a2) b) f
 
 -- Returns the subset (of the domain) which exhibits
 -- different return values for the two functions
--- I am not sure about its correctness...
 discrepancy :: (NominalType a, NominalType b) => Fun a b -> Fun a b -> Set a
 discrepancy f1 f2 =
     pairsWithFilter (

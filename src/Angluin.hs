@@ -54,7 +54,6 @@ useCounterExampleAngluin teacher state@State{..} ces =
     addRows teacher ds state
 
 -- This is the variant by Maler and Pnueli
--- I used to think it waw Rivest and Schapire, but they add less columns
 useCounterExampleMP :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> State i
 useCounterExampleMP teacher state@State{..} ces =
     trace ("Using ce: " ++ show ces) $
@@ -79,9 +78,9 @@ learnAngluinRows teacher = learn makeCompleteAngluin useCounterExampleAngluin co
 -- Below are some variations of the above functions with different
 -- performance characteristics.
 
--- Joshua's slower version
-consistencyTestJ :: NominalType i => State i -> TestResult i
-consistencyTestJ State{..} = case solve (isEmpty defect) of
+-- Some coauthor's slower version
+consistencyTest2 :: NominalType i => State i -> TestResult i
+consistencyTest2 State{..} = case solve (isEmpty defect) of
     Just True  -> Succes
     Just False -> trace "Not consistent" $ Failed empty columns
     where
@@ -95,9 +94,9 @@ consistencyTestJ State{..} = case solve (isEmpty defect) of
                  ) ss ss aa
         columns = sum $ map (\((s1,s2,a),es) -> map (a:) es) defect
 
--- Bartek's faster version
-consistencyTestB :: NominalType i => State i -> TestResult i
-consistencyTestB State{..} = case solve (isEmpty defect) of
+-- Some coauthor's faster version
+consistencyTest3 :: NominalType i => State i -> TestResult i
+consistencyTest3 State{..} = case solve (isEmpty defect) of
     Just True  -> Succes
     Just False -> trace "Not consistent" $ Failed empty columns
     where

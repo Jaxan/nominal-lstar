@@ -25,7 +25,10 @@ import           Prelude          hiding (and, curry, filter, lookup, map, not,
    Sounds a bit crazy, but the teacher kind of takes care of that. Of course
    I do not know whether this will terminate. But it's nice to experiment with.
    Also I do not 'minimize' the NFA by taking only prime rows. Saves a lot of
-   checking but makes the result not minimal (whatever that would mean).
+   checking but makes the result not minimal (whatever that would mean). It
+   is quite fast, however ;-).
+
+   THIS IS NOT USED IN THE PAPER.
 -}
 
 -- We can determine its completeness with the following

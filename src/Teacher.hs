@@ -27,9 +27,12 @@ import           Text.Read               (readMaybe)
 
 -- Abstract teacher type (inside the NLambda library, ideally one would like
 -- an external interface, with Bool as output instead of Formula for instance)
+-- For now we do actually implement an external teacher, but it is rather hacky.
 data Teacher i = Teacher
     -- Given a sequence, check whether it is in the language
-    -- Assumed to be equivariant
+    -- Assumed to be equivariant.
+    -- We slightly change the type to support counting the number of orbits.
+    -- All teacher (except the counting one) implement membership :: [i] -> Formula
     { membership :: Set [i] -> Set ([i], Formula)
     -- Given a hypothesis, returns Nothing when equivalence or a (equivariant)
     -- set of counter examples. Needs to be quantified over q, because the
@@ -50,6 +53,8 @@ foreachQuery f qs = map (\q -> (q, f q)) qs
 -- 1. Fully automatic
 -- 2. Fully interactive (via IO)
 -- 3. Automatic membership, but interactive equivalence tests
+-- Furthermore we provide a teacher which counts and then passes the query
+-- to a delegate.
 
 -- 1. This is a fully automatic teacher, which has an internal automaton
 -- Only works for DFAs for now, as those can be checked for equivalence
@@ -61,7 +66,7 @@ teacherWithTarget aut = Teacher
     }
 
 -- 1b. This is a fully automatic teacher, which has an internal automaton
--- Might work for NFAs, not really tested
+-- NFA have undecidable equivalence, n is a bound on deoth of bisimulation.
 teacherWithTargetNonDet :: (Show i, Show q, NominalType i, NominalType q) => Int -> Automaton q i -> Teacher i
 teacherWithTargetNonDet n aut = Teacher
     { membership = foreachQuery $ automaticMembership aut
@@ -82,7 +87,8 @@ teacherWithIO = Teacher
     }
 
 -- 3. A teacher uses a target for the mebership queries, but you for equivalence
--- Useful as long as you don't have an equivalence check, For example for G-NFAs
+-- Useful as long as you don't have an equivalence check
+-- used for NFAs when there was no bounded bisimulation yet
 teacherWithTargetAndIO :: NominalType q => Automaton q Atom -> Teacher Atom
 teacherWithTargetAndIO aut = Teacher
     { membership = foreachQuery $ automaticMembership aut
@@ -131,7 +137,9 @@ mqCounter :: IORef [Int]
 {-# NOINLINE mqCounter #-}
 mqCounter = unsafePerformIO $ newIORef []
 
+
 -- Implementations of above functions
+-- 
 automaticMembership aut input = accepts aut input
 automaticEquivalent bisimlator aut hypo = case solve isEq of
         Nothing -> error "should be solved"
@@ -146,8 +154,7 @@ automaticAlphabet aut = NLambda.alphabet aut
 instance Conditional a => Conditional (Identity a) where
     cond f x y = return (cond f (runIdentity x) (runIdentity y))
 
--- Checks bisimulation of initial states
--- I am not sure whether it does the right thing for non-det automata
+-- Checks bisimulation of initial states (only for DFAs)
 -- returns some counter examples if not bisimilar
 -- returns empty set iff bisimilar
 bisim :: (NominalType i, NominalType q1, NominalType q2) => Automaton q1 i -> Automaton q2 i -> Set [i]
@@ -219,6 +226,7 @@ bisimNonDet n aut1 aut2 = runIdentity $ go empty (singleton ([], initialStates a
         addEmptyWord x y = ([], x, y)
         sumMap f = sum . (map f)
 
+-- Posing a membership query to the terminal and waits for used to input a formula
 ioMembership :: (Show i, NominalType i) => [i] -> Formula
 ioMembership input = unsafePerformIO $ do
     let supp = leastSupport input
@@ -243,6 +251,7 @@ ioMembership input = unsafePerformIO $ do
                             loop
                         Just f -> return f
 
+-- Poses a query to the terminal, waiting for the user to provide a counter example
 ioEquivalent :: (Show q, NominalType q) => Automaton q Atom -> Maybe (Set [Atom])
 ioEquivalent hypothesis = unsafePerformIO $ do
     Prelude.putStrLn "\n# Is the following automaton correct?"

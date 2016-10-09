@@ -7,10 +7,9 @@ used for the paper). The remainder of this README assumes you are using that
 archive.
 
 We have bundled the implementation of the learning algorithm and the
-implementation of the NLambda library in this artifact. Note that our
-version of NLambda is slightly different from the one on the [NLambda
-website](http://www.mimuw.edu.pl/~szynwelski/nlambda/). Some bugs were
-fixed in our version and possibly some new features have appeared.
+implementation of the NLambda library in version 1.1 in this artifact. 
+Comparing to version 1.0 some bugs were fixed and some new features have appeared. 
+More information about the library can be found on the [NLambda website](http://www.mimuw.edu.pl/~szynwelski/nlambda/).
 
 This artifact was tested on a Debian system. During development both Mac and
 Windows have been used, so it should work on these operating systems too. Note
@@ -22,10 +21,10 @@ implemented in Haskell and you will need a recent GHC (at least 7.10).
 
 Should be just as easy as `stack build`, assuming one has installed Haskell
 stack. I noticed that the linker needed libtinfo. So you might need to install
-the libtinfo package, for example through apt. (I do not know which haskell
+the libtinfo package, for example through apt. (I do not know which Haskell
 package depends on this.) Building may take a while.
 
-Stack for haskell can be installed as described on
+Stack for Haskell can be installed as described on
 [their website](http://haskellstack.org/).
 
 You will need to install the [Z3](https://github.com/Z3Prover/z3) theorem

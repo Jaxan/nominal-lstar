@@ -22,9 +22,8 @@ data Aut = Fifo Int | Stack Int | Running Int | NFA1 | Bollig Int
 -- existential wrapper
 data A = forall q i . (LearnableAlphabet i, NominalType q, Show q) => A (Automaton q i)
 
-main :: IO ()
-main = do
-    [learnerName, teacherName, autName] <- getArgs
+mainExample :: String -> String -> String -> IO ()
+mainExample learnerName teacherName autName = do
     A automaton <- return $ case read autName of
             Fifo n    -> A $ Examples.fifoExample n
             Stack n   -> A $ Examples.stackExample n
@@ -40,11 +39,20 @@ main = do
             NomNLStar   -> learnBollig teacher
     putStrLn "Finished! Final hypothesis ="
     print h
-    --eqs <- readIORef eqCounter
-    --mqs <- readIORef mqCounter
-    --putStrLn "Number of equivalence queries:"
-    --print eqs
-    --putStrLn "Number of batched membership queries:"
-    --print (length mqs)
-    --putStrLn "Number of membership orbits:"
-    --mapM_ print $ reverse mqs
+
+mainWithIO :: String -> IO ()
+mainWithIO learnerName = do
+    let h = case read learnerName of
+            NomLStar    -> learnAngluinRows teacherWithIO
+            NomLStarCol -> learnAngluin teacherWithIO
+            NomNLStar   -> learnBollig teacherWithIO
+    putStrLn "Finished! Final hypothesis ="
+    print h
+
+main :: IO ()
+main = do
+    bla <- getArgs
+    case bla of
+        [learnerName, teacherName, autName] -> mainExample learnerName teacherName autName
+        [learnerName] -> mainWithIO learnerName
+        _ -> putStrLn "Give either 1 (for the IO teacher) or 3 (for automatic teacher) arguments"

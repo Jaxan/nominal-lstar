@@ -37,7 +37,6 @@ mainExample learnerName teacherName autName = do
             NomLStar    -> learnAngluinRows teacher
             NomLStarCol -> learnAngluin teacher
             NomNLStar   -> learnBollig teacher
-    putStrLn "Finished! Final hypothesis ="
     print h
 
 mainWithIO :: String -> IO ()
@@ -46,7 +45,6 @@ mainWithIO learnerName = do
             NomLStar    -> learnAngluinRows teacherWithIO
             NomLStarCol -> learnAngluin teacherWithIO
             NomNLStar   -> learnBollig teacherWithIO
-    putStrLn "Finished! Final hypothesis ="
     print h
 
 main :: IO ()

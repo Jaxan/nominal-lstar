@@ -246,11 +246,8 @@ ioMembership inputs = unsafePerformIO $ do
                                 loop
                             Just f -> return f
         answer <- runInputT defaultSettings loop
-        Prelude.print $ orbit [] (input, fromBool answer)
         return $ orbit [] (input, fromBool answer)
-    let answersAsSet = sum . fromList $ answers
-    Prelude.putStrLn "\n# Thanks!"
-    Prelude.print answersAsSet
+    let answersAsSet = simplify . sum . fromList $ answers
     return answersAsSet
 
 -- Poses a query to the terminal, waiting for the user to provide a counter example
@@ -260,7 +257,7 @@ ioEquivalent hypothesis = unsafePerformIO $ do
     Prelude.putStrLn "\n# Is the following automaton correct?"
     Prelude.putStr "# "
     Prelude.print hypothesis
-    Prelude.putStrLn "# Nothing for Yes, Just [...] for a counter example"
+    Prelude.putStrLn "# \"Nothing\" for equivalent, \"Just [...]\" for a counter example (eg \"Just [0,1,0]\")"
     answer <- runInputT defaultSettings loop
     case answer of
         Nothing -> return Nothing
@@ -278,10 +275,10 @@ ioEquivalent hypothesis = unsafePerformIO $ do
         loop = do
             x <- getInputLine "> "
             case x of
-                Nothing -> error "Quit"
+                Nothing -> error "Bye bye, have a good day!"
                 Just str -> do
-                    case readMaybe str :: Maybe (Maybe [Prelude.String]) of
+                    case readMaybe str :: Maybe (Maybe [Int]) of
                         Nothing -> do
-                            outputStrLn $ "Unable to parse " ++ str ++ " :: Maybe [String]"
+                            outputStrLn $ "Unable to parse " ++ str ++ " :: Maybe [Int]"
                             loop
                         Just f -> return f

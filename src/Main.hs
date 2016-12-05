@@ -10,6 +10,8 @@ import           Data.IORef (readIORef)
 import           System.Environment
 import           NLambda
 
+import           Prelude hiding (map)
+
 data Learner = NomLStar | NomLStarCol | NomNLStar
   deriving (Show, Read)
 
@@ -41,10 +43,11 @@ mainExample learnerName teacherName autName = do
 
 mainWithIO :: String -> IO ()
 mainWithIO learnerName = do
+    let t = teacherWithIO (map Put atoms `union` map Get atoms)
     let h = case read learnerName of
-            NomLStar    -> learnAngluinRows teacherWithIO
-            NomLStarCol -> learnAngluin teacherWithIO
-            NomNLStar   -> learnBollig teacherWithIO
+            NomLStar    -> learnAngluinRows t
+            NomLStarCol -> learnAngluin t
+            NomNLStar   -> learnBollig t
     print h
 
 main :: IO ()

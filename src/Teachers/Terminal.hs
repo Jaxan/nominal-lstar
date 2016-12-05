@@ -10,12 +10,12 @@ import System.IO.Unsafe (unsafePerformIO)
 import Text.Read (readMaybe)
 
 -- Posing a membership query to the terminal and waits for used to input a formula
-ioMembership :: Set [Atom] -> Set ([Atom], Formula)
+ioMembership :: (Show i, NominalType i, Contextual i) => Set [i] -> Set ([i], Formula)
 ioMembership queries = unsafePerformIO $ do
     cache <- readIORef mqCache
     let cachedAnswers = filter (\(a, f) -> a `member` queries) cache
     let newQueries = simplify $ queries \\ map fst cache
-    let representedInputs = fromVariant . fromJust <$> (toList $ setOrbitsRepresentatives newQueries)
+    let representedInputs = toList . mapFilter id . setOrbitsRepresentatives $ newQueries
     putStrLn "\n# Membership Queries:"
     putStrLn "# Please answer each query with \"True\" or \"False\" (\"^D\" for quit)"
     answers <- forM representedInputs $ \input -> do
@@ -28,22 +28,22 @@ ioMembership queries = unsafePerformIO $ do
                     Just Nothing -> do
                         outputStrLn $ "Unable to parse, try again"
                         loop
-                    Just (Just f) -> return (f :: Bool)
+                    Just (Just f) -> return f
         answer <- runInputT defaultSettings loop
         return $ orbit [] (input, fromBool answer)
     let answersAsSet = simplify . sum . fromList $ answers
     writeIORef mqCache (simplify $ cache `union` answersAsSet)
     return (simplify $ cachedAnswers `union` answersAsSet)
+    where
+        -- We use a cache, so that questions will not be repeated.
+        -- It is a bit hacky, as the Teacher interface does not allow state...
+        {-# NOINLINE mqCache #-}
+        mqCache = unsafePerformIO $ newIORef empty
 
--- We use a cache, so that questions will not be repeated.
--- It is a bit hacky, as the Teacher interface does not allow state...
-mqCache :: IORef (Set ([Atom], Formula))
-{-# NOINLINE mqCache #-}
-mqCache = unsafePerformIO $ newIORef empty
 
 -- Poses a query to the terminal, waiting for the user to provide a counter example
 -- TODO: extend to any alphabet type (hard because of parsing)
-ioEquivalent :: (Show q, NominalType q) => Automaton q Atom -> Maybe (Set [Atom])
+ioEquivalent :: (Show q, NominalType q, Show i, Read i, NominalType i) => Automaton q i -> Maybe (Set [i])
 ioEquivalent hypothesis = unsafePerformIO $ do
     putStrLn "\n# Is the following automaton correct?"
     putStr "# "
@@ -58,17 +58,6 @@ ioEquivalent hypothesis = unsafePerformIO $ do
                 Just Nothing -> do
                     outputStrLn $ "Unable to parse, try again"
                     loop
-                Just (Just f) -> return (Just f :: Maybe [Int])
+                Just (Just f) -> return (Just f)
     answer <- runInputT defaultSettings loop
-    case answer of
-        Nothing -> return Nothing
-        Just input -> do
-            -- create sequences of same length
-            let n = length input
-            let sequence = replicateAtoms n
-            -- whenever two are identiacl in input, we will use eq, if not neq
-            let op i j = if (input !! i) == (input !! j) then eq else neq
-            -- copy the relations from input to sequence
-            let rels s = and [op i j (s !! i) (s !! j) | i <- [0..n - 1], j <- [0..n - 1], i < j]
-            let fseq = filter rels sequence
-            return $ Just fseq
+    return (orbit [] <$> answer)

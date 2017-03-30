@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 module Examples.Contrived where
 
 import           NLambda
@@ -12,8 +12,8 @@ import           GHC.Generics (Generic)
 -- Example automaton from the whiteboard. Three orbits with 0, 1 and 2
 -- registers. The third orbit has a local symmetry (S2).
 data Example1 = Initial | S1 Atom | S2 (Atom, Atom)
-  deriving (Show, Eq, Ord, Generic)
-instance BareNominalType Example1
+  deriving (Show, Eq, Ord, Generic, NominalType, Contextual)
+
 example1 :: Automaton Example1 Atom
 example1 = automaton
     -- states, 4 orbits (of which one unreachable)
@@ -36,8 +36,9 @@ example1 = automaton
 
 -- Accepts all even words (ignores the alphabet). Two orbits, with a
 -- trivial action. No registers.
-data Aut2 = Even | Odd deriving (Eq, Ord, Show, Generic)
-instance BareNominalType Aut2
+data Aut2 = Even | Odd
+  deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
+
 example2 :: Automaton Aut2 Atom
 example2 = automaton
     -- states, two orbits
@@ -55,8 +56,9 @@ example2 = automaton
 
 -- Accepts all non-empty words with the same symbol. Three orbits: the initial
 -- state, a state with a register and a sink state.
-data Aut3 = Empty | Stored Atom | Sink deriving (Eq, Ord, Show, Generic)
-instance BareNominalType Aut3
+data Aut3 = Empty | Stored Atom | Sink
+  deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
+
 example3 :: Automaton Aut3 Atom
 example3 = automaton
     -- states, three orbits
@@ -84,8 +86,8 @@ data Aut4 = Aut4Init              -- Initial state
           | Second Atom Atom      -- After reading two different symbols
           | Symm Atom Atom Atom   -- Accepting state with C3 symmetry
           | Sorted Atom Atom Atom -- State without symmetry
-  deriving (Eq, Ord, Show, Generic)
-instance BareNominalType Aut4
+  deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
+
 example4 :: Automaton Aut4 Atom
 example4 = automaton
     -- states
@@ -123,8 +125,8 @@ example4 = automaton
 
 -- Accepts all two-symbols words with different atoms
 data Aut5 = Aut5Init | Aut5Store Atom | Aut5T | Aut5F
-    deriving (Eq, Ord, Show, Generic)
-instance BareNominalType Aut5
+    deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
+
 example5 :: Automaton Aut5 Atom
 example5 = automaton
     -- states

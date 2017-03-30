@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 module Examples.Stack (DataInput(..), stackExample) where
 
 import           Examples.Fifo (DataInput (..))
@@ -10,7 +10,8 @@ import qualified Prelude       ()
 
 
 -- Functional stack data type is simply a list.
-data Stack a = Stack [a] deriving (Eq, Ord, Show, Generic)
+data Stack a = Stack [a]
+  deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
 
 push :: a -> Stack a -> Stack a
 push x (Stack l1) = Stack (x:l1)
@@ -35,7 +36,6 @@ sizeStack (Stack l1) = length l1
 
 -- The automaton: States consist of stacks and a sink state.
 -- The parameter n is the bound.
-instance BareNominalType a => BareNominalType (Stack a)
 stackExample :: Int -> Automaton (Maybe (Stack Atom)) DataInput
 stackExample n = automaton
     -- states

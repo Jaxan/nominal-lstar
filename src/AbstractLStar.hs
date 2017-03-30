@@ -4,7 +4,6 @@ module AbstractLStar where
 import ObservationTable
 import Teacher
 
-import Control.DeepSeq (deepseq)
 import Debug.Trace
 import NLambda
 
@@ -48,7 +47,6 @@ learn :: LearnableAlphabet i
   -> State i
   -> Automaton (BRow i) i
 learn makeComplete handleCounterExample constructHypothesis teacher s =
-    deepseq s $ -- This helps ordering the traces somewhat.
     trace "##################" $
     trace "1. Making it complete and consistent" $
     let s2 = makeComplete teacher s in

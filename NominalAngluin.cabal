@@ -20,11 +20,13 @@ executable NominalAngluin
     Examples.Stack,
     NLStar,
     ObservationTable,
-    Teacher
+    Teacher,
+    Teachers.Teacher,
+    Teachers.Terminal,
+    Teachers.Whitebox
   build-depends:
     base >= 4.8 && < 5,
     containers,
-    deepseq,
     haskeline,
     mtl,
     NLambda >= 1.1

@@ -19,7 +19,7 @@ import           GHC.Generics (Generic)
 
 -- Parametric in the alphabet, because why not?
 data RunningExample a = Store [a] | Check [a] | Accept | Reject
-  deriving (Eq, Ord, Show, Generic, BareNominalType)
+  deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
 
 runningExample alphabet 0 = automaton
     (fromList [Accept, Reject])

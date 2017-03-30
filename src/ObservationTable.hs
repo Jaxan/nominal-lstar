@@ -10,7 +10,6 @@ module ObservationTable where
 import           NLambda      hiding (fromJust)
 import           Teacher
 
-import           Control.DeepSeq (NFData, force)
 import           Data.Maybe   (fromJust)
 import           Debug.Trace  (trace)
 import           GHC.Generics (Generic)
@@ -43,7 +42,7 @@ type Row i o = Fun [i] o
 
 -- This is a rather arbitrary set of constraints
 -- But I use them *everywhere*, so let's define them once and for all.
-type LearnableAlphabet i = (NFData i, Contextual i, NominalType i, Show i)
+type LearnableAlphabet i = (Contextual i, NominalType i, Show i)
 
 -- `row is` denotes the data of a single row
 -- that is, the function E -> O
@@ -83,17 +82,7 @@ data State i = State
     , ee  :: Set [i]  -- suffixes
     , aa  :: Set i    -- alphabet (remains constant)
     }
-    deriving (Show, Ord, Eq, Generic, NFData, BareNominalType)
-
-instance NominalType i => Conditional (State i) where
-    cond f s1 s2 = fromTup (cond f (toTup s1) (toTup s2)) where
-        toTup State{..} = (t,ss,ssa,ee,aa)
-        fromTup (t,ss,ssa,ee,aa) = State{..}
-
-instance (Ord i, Contextual i) => Contextual (State i) where
-    when f s = fromTup (when f (toTup s)) where
-        toTup State{..} = (t,ss,ssa,ee,aa)
-        fromTup (t,ss,ssa,ee,aa) = State{..}
+    deriving (Show, Ord, Eq, Generic, NominalType, Conditional, Contextual)
 
 -- Precondition: the set together with the current rows is prefix closed
 addRows :: LearnableAlphabet i => Teacher i -> Set [i] -> State i -> State i

@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 {-# LANGUAGE TupleSections #-}
 module Examples.ContrivedNFAs where
 
@@ -14,8 +14,8 @@ import           GHC.Generics (Generic)
 -- The complement of 'all distinct atoms'
 -- Not determinizable
 data NFA1 = Initial1 | Guessed1 Atom | Final1
-  deriving (Show, Eq, Ord, Generic)
-instance BareNominalType NFA1
+  deriving (Show, Eq, Ord, Generic, NominalType, Contextual)
+
 exampleNFA1 :: Automaton NFA1 Atom
 exampleNFA1 = automaton
     -- states, 4 orbits (of which one unreachable)
@@ -43,8 +43,8 @@ exampleNFA1 = automaton
 -- So this one *is* determinizable.
 -- Also used in the Bollig et al paper.
 data NFA2 = Initial2 | Distinguished Atom | Count Int
-  deriving (Show, Eq, Ord, Generic)
-instance BareNominalType NFA2
+  deriving (Show, Eq, Ord, Generic, NominalType, Contextual)
+
 exampleNFA2 n = automaton
     (singleton Initial2
         `union` map Distinguished atoms

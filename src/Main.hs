@@ -43,7 +43,7 @@ mainExample learnerName teacherName autName = do
 
 mainWithIO :: String -> IO ()
 mainWithIO learnerName = do
-    let t = teacherWithIO (map Put atoms `union` map Get atoms)
+    let t = teacherWithIO (atoms)
     let h = case read learnerName of
             NomLStar    -> learnAngluinRows t
             NomLStarCol -> learnAngluin t

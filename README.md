@@ -2,40 +2,44 @@ Learning Nominal Automata
 =========================
 
 *NOTE*: Please download the archive `popl-artifact.zip`. This contains the
-same source code, but is bundled with the NLambda library (the specific version
-used for the paper). The remainder of this README assumes you are using that
-archive.
+specific versions (of this and nlambda) used for the POPL submission.
+This archive should contain a similar README, with simpler instructions.
+If you want the newest version of the software, then don't use that
+archive, but use the code in this repository.
 
-We have bundled the implementation of the learning algorithm and the
-implementation of the NLambda library in version 1.1 in this artifact. 
-Comparing to version 1.0 some bugs were fixed and some new features have appeared. 
-More information about the library can be found on the [NLambda website](http://www.mimuw.edu.pl/~szynwelski/nlambda/).
+
+# Dependencies
 
 This artifact was tested on a Debian system. During development both Mac and
 Windows have been used, so it should work on these operating systems too. Note
 that you will need the Z3 solver (as executable). The algorithms are
 implemented in Haskell and you will need a recent GHC (at least 7.10).
 
-
-# Building
-
-Should be just as easy as `stack build`, assuming one has installed Haskell
-stack. I noticed that the linker needed libtinfo. So you might need to install
-the libtinfo package, for example through apt. (I do not know which Haskell
-package depends on this.) Building may take a while.
-
-Stack for Haskell can be installed as described on
-[their website](http://haskellstack.org/).
+We use the library [nlambda](https://github.com/szynwelski/nlambda). It
+is recommended to use the most recent version. Just grab the source and
+put it somewhere (we build it together with nominal-lstar).
 
 You will need to install the [Z3](https://github.com/Z3Prover/z3) theorem
 prover. The executable should be locatable through the PATH environment.
 Follow the build guide on their website.
 
 
+# Building
+
+You can use the stack tool. Make sure to include nlambda as a package.
+It should be a matter of `stack build`, if not, stack will probably
+tell you what to do. (If you need any help, send me a message.)
+
+
 # Running
 
 Stack will produce a binary in the `.stack-works` directory, which can
 be invoked directly. Alternatively one can run `stack exec NominalAngluin`.
+There is two modes of operation: Running the examples, or running it
+interactively.
+
+## Examples
+
 The executable expects three arguments:
 
 ```
@@ -87,3 +91,51 @@ are given by DFAs and we used all three learners with the `EqDFA` teacher.
 For the latter two we used the `EqNFA` teacher with a bound of at most 10.
 We proved by hand that the learnt model did indeed accept the language.
 
+## Interactively
+
+Run the tool like so:
+```
+stack exec NominalAngluin -- <Leaner>
+```
+(So similar to the above case, but without specifying the equivalence
+checker and example.) The tool will ask you membership queries and
+equivalence queries through the terminal. The alphabet is fixed in
+`Main.hs`, so change it if you need a different alphabet (it should
+work generically for any alphabet).
+
+A run might look like the following. The lines with `Q:` are queries,
+answered by myself on the lines with `A:` or `>`.
+```
+##################
+1. Making it complete and consistent
+2. Constructing hypothesis
+
+# Membership Queries:
+# Please answer each query with "True" or "False" ("^D" for quit)
+Q: []
+A: True
+Q: [0]
+A: True
+Automaton {states = {{([],True)}}, alphabet = {a₁ : for a₁ ∊ 𝔸}, delta = {({([],True)},a₁,{([],True)}) : for a₁ ∊ 𝔸}, initialStates = {{([],True)}}, finalStates = {{([],True)}}}
+3. Equivalent? 
+
+# Is the following automaton correct?
+# Automaton {states = {{([],True)}}, alphabet = {a₁ : for a₁ ∊ 𝔸}, delta = {({([],True)},a₁,{([],True)}) : for a₁ ∊ 𝔸}, initialStates = {{([],True)}}, finalStates = {{([],True)}}}
+# "^D" for equivalent, "[...]" for a counter example (eg "[0,1,0]")
+> [0,1]
+Just {[a₁,a₂] : a₁ ≠ a₂ for a₁,a₂ ∊ 𝔸}
+##################
+1. Making it complete and consistent
+2. Constructing hypothesis
+Using ce: {[a₁,a₂] : a₁ ≠ a₂ for a₁,a₂ ∊ 𝔸}
+add columns: {[a₁] : for a₁ ∊ 𝔸, [a₁,a₂] : a₁ ≠ a₂ for a₁,a₂ ∊ 𝔸}
+
+# Membership Queries:
+# Please answer each query with "True" or "False" ("^D" for quit)
+Q: [0,0]
+A: True
+Q: [1,0]
+A: False
+Q: [1,0,1]
+A: 
+```

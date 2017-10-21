@@ -11,22 +11,25 @@ import NLambda
 import qualified Prelude hiding ()
 import Prelude (Bool(..), Maybe(..), id, ($), (.), (++), fst, show)
 
+justOne :: (Contextual a, NominalType a) => Set a -> Set a
+justOne s = mapFilter id . orbit [] . element $ s
+
 -- We can determine its completeness with the following
 -- It returns all witnesses (of the form sa) for incompleteness
-closednessTest :: NominalType i => State i -> TestResult i
+closednessTest :: LearnableAlphabet i => State i -> TestResult i
 closednessTest State{..} = case solve (isEmpty defect) of
     Just True  -> Succes
-    Just False -> trace "Not closed" $ Failed defect empty
+    Just False -> trace "Not closed" $ Failed (justOne defect) empty
     where
         sss = map (row t) ss                 -- all the rows
         hasEqRow = contains sss . row t      -- has equivalent upper row
         defect = filter (not . hasEqRow) ssa -- all rows without equivalent guy
 
 -- We look for inconsistencies and return columns witnessing it
-consistencyTestDirect :: NominalType i => State i -> TestResult i
+consistencyTestDirect :: LearnableAlphabet i => State i -> TestResult i
 consistencyTestDirect State{..} = case solve (isEmpty defect) of
     Just True  -> Succes
-    Just False -> trace "Not consistent" $ Failed empty defect
+    Just False -> trace "Not consistent" $ Failed empty (justOne defect)
     where
         ssRows = map (\u -> (u, row t u)) ss
         candidates = pairsWithFilter (\(u1,r1) (u2,r2) -> maybeIf (u1 `neq` u2 /\ r1 `eq` r2) (u1, u2)) ssRows ssRows

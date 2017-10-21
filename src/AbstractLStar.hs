@@ -54,13 +54,17 @@ learn makeComplete handleCounterExample constructHypothesis teacher s =
     let h = constructHypothesis s2 in
     traceShow h $
     trace "3. Equivalent? " $
-    let eq = equivalent teacher h in
-    traceShow eq $
-    case eq of
-        Nothing -> h
-        Just ce -> do
-            let s3 = handleCounterExample teacher s2 ce
-            learn makeComplete handleCounterExample constructHypothesis teacher s3
+    eqloop s2 h
+    where
+        eqloop s2 h = case equivalent teacher h of
+                          Nothing -> trace "Yes" $ h
+                          Just ces -> trace "No" $
+                              case isTrue . isEmpty $ realces h ces of
+                                  True -> eqloop s2 h
+                                  False ->
+                                      let s3 = handleCounterExample teacher s2 ces in
+                                      learn makeComplete handleCounterExample constructHypothesis teacher s3
+        realces h ces = NLambda.filter (\(ce, a) -> a `neq` accepts h ce) $ membership teacher ces
 
 -- Initial state is always the same in our case
 constructEmptyState :: LearnableAlphabet i => Teacher i -> State i

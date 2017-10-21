@@ -6,6 +6,7 @@ module Teacher
     , teacherWithTarget
     , teacherWithTargetNonDet
     , teacherWithIO
+    , teacherWithIO2
     , teacherWithTargetAndIO
     ) where
 
@@ -50,6 +51,14 @@ teacherWithIO :: (Show i, Read i, NominalType i, Contextual i) => Set i -> Teach
 teacherWithIO alph = Teacher
     { membership = ioMembership
     , equivalent = ioEquivalent
+    , alphabet   = alph
+    }
+
+-- 2b. Same as above. But with machine readable queries (except for EQs maybe)
+teacherWithIO2 :: (Show i, Read i, NominalType i, Contextual i) => Set i -> Teacher i
+teacherWithIO2 alph = Teacher
+    { membership = ioMembership2
+    , equivalent = ioEquivalent2
     , alphabet   = alph
     }
 

@@ -103,6 +103,11 @@ equivalence queries through the terminal. The alphabet is fixed in
 `Main.hs`, so change it if you need a different alphabet (it should
 work generically for any alphabet).
 
+Additionally, one can run the `NominalAngluin2` executable instead,
+if provides an easier to parse protocol for membership queries. Hence
+it is more suitable for automation. This will first ask for the alphabet
+which should be either `ATOMS` or `FIFO`.
+
 A run might look like the following. The lines with `Q:` are queries,
 answered by myself on the lines with `A:` or `>`.
 ```
@@ -139,3 +144,9 @@ A: False
 Q: [1,0,1]
 A: 
 ```
+
+# Changes since first release
+
+* Better support for interactive communication.
+* Optimisation: add only one row/column to fix closedness/consistency
+

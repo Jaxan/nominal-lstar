@@ -22,7 +22,7 @@ rowUnion set = Prelude.uncurry union . setTrueFalse . partition (\(_, f) -> f) $
 
 boolImplies :: Bool -> Bool -> Bool
 boolImplies True False = False
-boolImplies _ _ = True
+boolImplies _ _        = True
 
 sublang :: NominalType i => BRow i -> BRow i -> Formula
 sublang r1 r2 = forAll fromBool $ pairsWithFilter (\(i1, f1) (i2, f2) -> maybeIf (i1 `eq` i2) (f1 `boolImplies` f2)) r1 r2
@@ -61,7 +61,8 @@ constructHypothesisBollig State{..} = automaton q a d i f
         f = filter (\r -> singleton True `eq` mapFilter (\(i,b) -> maybeIf (i `eq` []) b) r) q
         d0 = triplesWithFilter (\s a s2 -> maybeIf (row t s2 `sublang` rowa t s a) (row t s, a, row t s2)) ss aa ss
         d = filter (\(q1,a,q2) -> q1 `member` q /\ q2 `member` q) d0
-        primesUpp = filter (\r -> r `neq` rowUnion (sublangs r (allRows \\ orbit [] r))) allRowsUpp
+        primesUpp = filter (\r -> nonEmpty r /\ r `neq` rowUnion (sublangs r (allRows \\ orbit [] r))) allRowsUpp
+        nonEmpty = isNotEmpty . filter (fromBool . Prelude.snd)
         allRowsUpp = map (row t) ss
         allRows = allRowsUpp `union` map (row t) ssa
 

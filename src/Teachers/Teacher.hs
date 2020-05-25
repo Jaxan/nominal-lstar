@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# language RankNTypes #-}
 module Teachers.Teacher where
 
 import NLambda
@@ -25,4 +25,4 @@ data Teacher i = Teacher
 -- Often a membership query is defined by a function [i] -> Formula. This wraps
 -- such a function to the required type for a membership query (see above).
 foreachQuery :: NominalType i => ([i] -> Formula) -> Set[i] -> Set ([i], Formula)
-foreachQuery f qs = map (\q -> (q, f q)) qs
+foreachQuery f = map (\q -> (q, f q))

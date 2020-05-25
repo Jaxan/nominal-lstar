@@ -2,7 +2,7 @@ name:                NominalAngluin
 version:             0.1.0.0
 license:             UnspecifiedLicense
 author:              Joshua Moerman
-copyright:           (c) 2016, Joshua Moerman
+copyright:           (c) 2016 - 2020, Joshua Moerman
 build-type:          Simple
 cabal-version:       >=1.10
 
@@ -34,7 +34,7 @@ executable NominalAngluin
     NLambda >= 1.1
   hs-source-dirs:      src
   default-language:    Haskell2010
-  ghc-options:         -O2
+  ghc-options:         -O2 -Wall
 
 executable NominalAngluin2
   ghc-options:
@@ -66,4 +66,4 @@ executable NominalAngluin2
     NLambda >= 1.1
   hs-source-dirs:      src
   default-language:    Haskell2010
-  ghc-options:         -O2
+  ghc-options:         -O2 -Wall

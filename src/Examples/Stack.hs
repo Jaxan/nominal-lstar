@@ -1,16 +1,16 @@
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+{-# language DeriveAnyClass #-}
+{-# language DeriveGeneric #-}
 module Examples.Stack (DataInput(..), stackExample) where
 
-import           Examples.Fifo (DataInput (..))
-import           GHC.Generics  (Generic)
-import           NLambda
-import           Prelude       (Eq, Int, Maybe (..), Ord, Show, length, ($),
-                                (.), (>=))
-import qualified Prelude       ()
+import Examples.Fifo (DataInput (..))
+import GHC.Generics (Generic)
+import NLambda
+import Prelude (Eq, Int, Maybe (..), Ord, Show, length, ($), (.), (>=))
+import qualified Prelude ()
 
 
 -- Functional stack data type is simply a list.
-data Stack a = Stack [a]
+newtype Stack a = Stack [a]
   deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
 
 push :: a -> Stack a -> Stack a

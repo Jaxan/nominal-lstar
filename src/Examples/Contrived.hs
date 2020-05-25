@@ -1,13 +1,13 @@
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+{-# language DeriveAnyClass #-}
+{-# language DeriveGeneric #-}
 module Examples.Contrived where
 
-import           NLambda
+import NLambda
 
 -- Explicit Prelude, as NLambda has quite some clashes
-import           Prelude      (Eq, Ord, Show, ($))
-import qualified Prelude      ()
-
-import           GHC.Generics (Generic)
+import GHC.Generics (Generic)
+import Prelude (Eq, Ord, Show, ($))
+import qualified Prelude ()
 
 -- Example automaton from the whiteboard. Three orbits with 0, 1 and 2
 -- registers. The third orbit has a local symmetry (S2).

@@ -1,11 +1,12 @@
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+{-# language DeriveAnyClass #-}
+{-# language DeriveGeneric #-}
 module Examples.Fifo (DataInput(..), fifoExample) where
 
-import           GHC.Generics (Generic)
-import           NLambda
-import           Prelude      (Eq, Int, Maybe (..), Ord, Show, Read, length, reverse,
-                               ($), (+), (-), (.), (>=))
-import qualified Prelude      ()
+import GHC.Generics (Generic)
+import NLambda
+import Prelude (Eq, Int, Maybe (..), Ord, Read, Show, length, reverse, ($), (+),
+                (-), (.), (>=))
+import qualified Prelude ()
 
 
 -- Functional queue data type. First list is for push stuff onto, the

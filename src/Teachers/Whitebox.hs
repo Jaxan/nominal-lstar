@@ -3,7 +3,7 @@ module Teachers.Whitebox where
 import NLambda
 
 import Control.Monad.Identity
-import Prelude hiding (map, sum, filter, not)
+import Prelude hiding (filter, map, not, sum)
 
 -- I found it a bit easier to write a do-block below. So I needed this
 -- Conditional instance.
@@ -21,7 +21,7 @@ bisim aut1 aut2 = runIdentity $ go empty (pairsWith addEmptyWord (initialStates 
             -- if elements are already in R, we can skip them
             let todo2 = filter (\(_, x, y) -> (x, y) `notMember` rel) todo
             -- split into correct pairs and wrong pairs
-            let (cont, ces) = partition (\(_, x, y) -> (x `member` (finalStates aut1)) <==> (y `member` (finalStates aut2))) todo2
+            let (cont, ces) = partition (\(_, x, y) -> (x `member` finalStates aut1) <==> (y `member` finalStates aut2)) todo2
             let aa = NLambda.alphabet aut1
             -- the good pairs should make one step
             let dtodo = sum (pairsWith (\(w, x, y) a -> pairsWith (\x2 y2 -> (a:w, x2, y2)) (d aut1 a x) (d aut2 a y)) cont aa)
@@ -32,7 +32,7 @@ bisim aut1 aut2 = runIdentity $ go empty (pairsWith addEmptyWord (initialStates 
                 -- else continue with good pairs
                 (ite (isEmpty dtodo)
                     (return empty)
-                    (go (rel `union` map stripWord cont) (dtodo))
+                    (go (rel `union` map stripWord cont) dtodo)
                 )
         d aut a x = mapFilter (\(s, l, t) -> maybeIf (s `eq` x /\ l `eq` a) t) (delta aut)
         stripWord (_, x, y) = (x, y)
@@ -63,7 +63,7 @@ bisimNonDet n aut1 aut2 = runIdentity $ go empty (singleton ([], initialStates a
             -- filter out things expressed as sums
             let todo2 = filter (\(_, x, y) -> notSums x y) todo1
             -- split into correct pairs and wrong pairs
-            let (cont, ces) = partition (\(_, x, y) -> (x `intersect` (finalStates aut1)) <==> (y `intersect` (finalStates aut2))) todo2
+            let (cont, ces) = partition (\(_, x, y) -> (x `intersect` finalStates aut1) <==> (y `intersect` finalStates aut2)) todo2
             let aa = NLambda.alphabet aut1
             -- the good pairs should make one step
             let dtodo = pairsWith (\(w, x, y) a -> (a:w, sumMap (d aut1 a) x, sumMap (d aut2 a) y)) cont aa
@@ -75,10 +75,9 @@ bisimNonDet n aut1 aut2 = runIdentity $ go empty (singleton ([], initialStates a
                 -- else continue with good pairs
                 (ite (isEmpty dtodo)
                     (return empty)
-                    (go (rel `union` map stripWord cont) (dtodo))
+                    (go (rel `union` map stripWord cont) dtodo)
                 )
         d aut a x = mapFilter (\(s, l, t) -> maybeIf (s `eq` x /\ l `eq` a) t) (delta aut)
         stripWord (_, x, y) = (x, y)
         getRevWord (w, _, _) = reverse w
-        addEmptyWord x y = ([], x, y)
-        sumMap f = sum . (map f)
+        sumMap f = sum . map f

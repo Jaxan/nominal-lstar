@@ -1,11 +1,9 @@
 module Teachers.Terminal where
 
-import NLambda
-
 import Control.Monad
 import Data.IORef
-import Data.List (intersperse, concat)
-import Prelude hiding (filter, map, and, sum)
+import NLambda
+import Prelude hiding (and, filter, map, sum)
 import System.Console.Haskeline
 import System.IO.Unsafe (unsafePerformIO)
 import Text.Read (readMaybe)
@@ -14,7 +12,7 @@ import Text.Read (readMaybe)
 ioMembership :: (Show i, NominalType i, Contextual i) => Set [i] -> Set ([i], Formula)
 ioMembership queries = unsafePerformIO $ do
     cache <- readIORef mqCache
-    let cachedAnswers = filter (\(a, f) -> a `member` queries) cache
+    let cachedAnswers = filter (\(a, _) -> a `member` queries) cache
     let newQueries = simplify $ queries \\ map fst cache
     let representedInputs = toList . mapFilter id . setOrbitsRepresentatives $ newQueries
     putStrLn "\n# Membership Queries:"
@@ -27,7 +25,7 @@ ioMembership queries = unsafePerformIO $ do
                 case x of
                     Nothing -> error "Bye bye, have a good day!"
                     Just Nothing -> do
-                        outputStrLn $ "Unable to parse, try again"
+                        outputStrLn "Unable to parse, try again"
                         loop
                     Just (Just f) -> return f
         answer <- runInputT defaultSettings loop
@@ -46,18 +44,18 @@ ioMembership queries = unsafePerformIO $ do
 ioMembership2 :: (Show i, NominalType i, Contextual i) => Set [i] -> Set ([i], Formula)
 ioMembership2 queries = unsafePerformIO $ do
     cache <- readIORef mqCache
-    let cachedAnswers = filter (\(a, f) -> a `member` queries) cache
+    let cachedAnswers = filter (\(a, _) -> a `member` queries) cache
     let newQueries = simplify $ queries \\ map fst cache
     let representedInputs = toList . mapFilter id . setOrbitsRepresentatives $ newQueries
     answers <- forM representedInputs $ \input -> do
-        let str = Data.List.concat . intersperse " " . fmap show $ input
+        let str = unwords . fmap show $ input
         putStrLn $ "MQ \"" ++ str ++ "\""
         let askit = do
                 x <- getInputLine ""
                 case x of
                     Just "Y" -> return True
                     Just "N" -> return False
-                    _ -> error "Unable to parse, or quit. Bye!"
+                    _        -> error "Unable to parse, or quit. Bye!"
         answer <- runInputT defaultSettings askit
         return $ orbit [] (input, fromBool answer)
     let answersAsSet = simplify . sum . fromList $ answers
@@ -70,28 +68,40 @@ ioMembership2 queries = unsafePerformIO $ do
         mqCache = unsafePerformIO $ newIORef empty
 
 
+newtype TestIO i = T [i]
+  deriving (Show, Read, Eq, Ord)
+
 -- Poses a query to the terminal, waiting for the user to provide a counter example
--- TODO: extend to any alphabet type (hard because of parsing)
+-- User can pose a "test query" which is evaluated on the hypothesis
 ioEquivalent :: (Show q, NominalType q, Show i, Read i, NominalType i) => Automaton q i -> Maybe (Set [i])
 ioEquivalent hypothesis = unsafePerformIO $ do
     putStrLn "\n# Is the following automaton correct?"
     putStr "# "
     print hypothesis
-    putStrLn "# \"^D\" for equivalent, \"[...]\" for a counter example (eg \"[0,1,0]\")"
+    putStrLn "# \"^D\" for equivalent; \"[...]\" for a counter example (eg \"[0,1,0]\"); \"T [...]\" for a test query."
     let loop = do
-            x <- fmap readMaybe <$> getInputLine "> "
-            case x of
-                Nothing ->  do
-                    outputStrLn $ "Ok, we're done"
+            resp <- getInputLine "> "
+            case resp of
+                Nothing -> do
+                    outputStrLn "Ok, we're done"
                     return Nothing
-                Just Nothing -> do
-                    outputStrLn $ "Unable to parse (88), try again"
-                    loop
-                Just (Just f) -> return (Just f)
+                Just inp ->
+                    case readMaybe inp of
+                        Just (T w) -> do
+                            let a = accepts hypothesis w
+                            outputStrLn $ show a
+                            loop
+                        Nothing ->
+                            case readMaybe inp of
+                                Just f -> return (Just f)
+                                Nothing -> do
+                                    outputStrLn "Unable to parse (88), try again"
+                                    loop
     answer <- runInputT defaultSettings loop
     return (orbit [] <$> answer)
 
 -- Same as above but in different format.
+-- This is used for automation and benchmarking different nominal tools
 ioEquivalent2 :: (Show q, NominalType q, Show i, Read i, NominalType i) => Automaton q i -> Maybe (Set [i])
 ioEquivalent2 hypothesis = unsafePerformIO $ do
     putStrLn "EQ\n\"Is the following automaton correct?"
@@ -110,4 +120,4 @@ ioEquivalent2 hypothesis = unsafePerformIO $ do
         readCE (' ' : xs) = readCE xs
         readCE xs = case reads xs of
             [(a, str)] -> a : readCE str
-            _ -> error "Unable to parse (113)"
+            _          -> error "Unable to parse (113)"

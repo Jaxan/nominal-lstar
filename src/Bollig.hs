@@ -6,10 +6,9 @@ import Angluin
 import ObservationTable
 import Teacher
 
-import Data.List (tails)
 import Debug.Trace
 import NLambda
-import Prelude (Bool (..), Int, Maybe (..), fst, show, ($), (++), (.))
+import Prelude (Bool (..), Int, Maybe (..), fst, snd, ($), (++), (.))
 import qualified Prelude hiding ()
 
 rowUnion :: NominalType i => Set (BRow i) -> BRow i
@@ -60,7 +59,7 @@ constructHypothesisBollig State{..} = automaton q a d i f
         i = filter (\r -> r `sublang` row t []) q
         f = filter (\r -> singleton True `eq` mapFilter (\(i,b) -> maybeIf (i `eq` []) b) r) q
         d0 = triplesWithFilter (\s a s2 -> maybeIf (row t s2 `sublang` rowa t s a) (row t s, a, row t s2)) ss aa ss
-        d = filter (\(q1,a,q2) -> q1 `member` q /\ q2 `member` q) d0
+        d = filter (\(q1, _, q2) -> q1 `member` q /\ q2 `member` q) d0
         primesUpp = filter (\r -> nonEmpty r /\ r `neq` rowUnion (sublangs r (allRows \\ orbit [] r))) allRowsUpp
         nonEmpty = isNotEmpty . filter (fromBool . Prelude.snd)
         allRowsUpp = map (row t) ss

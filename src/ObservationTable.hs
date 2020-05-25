@@ -1,20 +1,20 @@
-{-# LANGUAGE ConstraintKinds   #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# language ConstraintKinds #-}
+{-# language DeriveAnyClass #-}
+{-# language DeriveGeneric #-}
+{-# language FlexibleContexts #-}
+{-# language FlexibleInstances #-}
+{-# language RecordWildCards #-}
 
 module ObservationTable where
 
-import           NLambda      hiding (fromJust)
-import           Teacher
+import NLambda hiding (fromJust)
+import Teacher
 
-import           Data.Maybe   (fromJust)
-import           Debug.Trace  (trace)
-import           GHC.Generics (Generic)
-import           Prelude      (Bool (..), Eq, Ord, Show (..), ($), (++), (.), uncurry, id)
-import qualified Prelude      ()
+import Data.Maybe (fromJust)
+import Debug.Trace (trace)
+import GHC.Generics (Generic)
+import Prelude (Bool (..), Eq, Ord, Show (..), id, uncurry, ($), (++), (.))
+import qualified Prelude ()
 
 
 -- We represent functions as their graphs
@@ -66,7 +66,7 @@ type BRow i = Row i Bool
 fillTable :: LearnableAlphabet i => Teacher i -> Set [i] -> Set [i] -> BTable i
 fillTable teacher sssa ee = Prelude.uncurry union . map2 (map slv) . map2 simplify . partition (\(_, _, f) -> f) $ base
     where
-        base0 = pairsWith (\s e -> (s++e)) sssa ee
+        base0 = pairsWith (++) sssa ee
         base1 = membership teacher base0
         base1b s e = forAll id $ mapFilter (\(i,f) -> maybeIf (i `eq` (s++e)) f)  base1
         base = pairsWith (\s e -> (s, e, base1b s e)) sssa ee

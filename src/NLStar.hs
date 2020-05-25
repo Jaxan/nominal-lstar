@@ -1,18 +1,15 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# language RecordWildCards #-}
 module NLStar where
 
-import           AbstractLStar
-import           Angluin
-import           Bollig
-import           ObservationTable
-import           Teacher
+import AbstractLStar
+import Angluin
+import Bollig
+import ObservationTable
+import Teacher
 
-import           NLambda
-
-import           Debug.Trace
-import           Data.List        (inits, tails)
-import           Prelude          hiding (and, curry, filter, lookup, map, not,
-                                   sum)
+import Debug.Trace
+import NLambda
+import Prelude hiding (and, curry, filter, lookup, map, not, sum)
 
 {- This is not NL* from the Bollig et al paper. This is a very naive
    approximation. You see, the consistency in their paper is quite weak,

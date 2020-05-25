@@ -1,5 +1,5 @@
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE FlexibleInstances         #-}
+{-# language FlexibleInstances #-}
+{-# language RankNTypes #-}
 
 module Teacher
     ( module Teachers.Teacher
@@ -11,8 +11,8 @@ module Teacher
     ) where
 
 import Teachers.Teacher
-import Teachers.Whitebox
 import Teachers.Terminal
+import Teachers.Whitebox
 
 import NLambda hiding (alphabet)
 import qualified NLambda (alphabet)
@@ -65,16 +65,17 @@ teacherWithIO2 alph = Teacher
 -- 3. A teacher uses a target for the mebership queries, but you for equivalence
 -- Useful as long as you don't have an equivalence check
 -- used for NFAs when there was no bounded bisimulation yet
-teacherWithTargetAndIO :: NominalType q => Automaton q Atom -> Teacher Atom
+teacherWithTargetAndIO :: (Show i, Read i, NominalType i, Contextual i, NominalType q) => Automaton q i -> Teacher i
 teacherWithTargetAndIO aut = Teacher
     { membership = foreachQuery $ accepts aut
     , equivalent = ioEquivalent
-    , alphabet   = atoms
+    , alphabet   = NLambda.alphabet aut
     }
 
+automaticEquivalent :: (p1 -> p2 -> Set a) -> p1 -> p2 -> Maybe (Set a)
 automaticEquivalent bisimlator aut hypo = case solve isEq of
-        Nothing -> error "should be solved"
-        Just True -> Nothing
+        Nothing    -> error "should be solved"
+        Just True  -> Nothing
         Just False -> Just bisimRes
         where
             bisimRes = bisimlator aut hypo

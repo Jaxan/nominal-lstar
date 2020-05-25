@@ -1,5 +1,6 @@
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
-{-# LANGUAGE TupleSections #-}
+{-# language DeriveAnyClass #-}
+{-# language DeriveGeneric #-}
+{-# language TupleSections #-}
 module Examples.RunningExample where
 
 {- In this file we define the running example of the paper
@@ -8,19 +9,20 @@ module Examples.RunningExample where
    but in terms of FO definable sets it is quite small.
 -}
 
-import           NLambda
+import NLambda
 
 -- Explicit Prelude, as NLambda has quite some clashes
-import           Data.List    (reverse)
-import           Prelude      (Eq, Ord, Show, ($), (.), (-))
-import qualified Prelude      ()
+import Data.List (reverse)
+import Prelude (Eq, Int, Ord, Show, ($), (-), (.))
+import qualified Prelude ()
 
-import           GHC.Generics (Generic)
+import GHC.Generics (Generic)
 
 -- Parametric in the alphabet, because why not?
 data RunningExample a = Store [a] | Check [a] | Accept | Reject
   deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
 
+runningExample :: NominalType a => Set a -> Int -> Automaton (RunningExample a) a
 runningExample alphabet 0 = automaton
     (fromList [Accept, Reject])
     alphabet

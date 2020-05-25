@@ -1,14 +1,14 @@
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
-{-# LANGUAGE TupleSections #-}
+{-# language DeriveAnyClass #-}
+{-# language DeriveGeneric #-}
+{-# language TupleSections #-}
 module Examples.ContrivedNFAs where
 
-import           NLambda
+import NLambda
 
 -- Explicit Prelude, as NLambda has quite some clashes
-import           Prelude      (Eq, Ord, Show, ($), Int, (+), (-))
-import qualified Prelude      ()
-
-import           GHC.Generics (Generic)
+import GHC.Generics (Generic)
+import Prelude (Eq, Int, Ord, Show, (+), (-))
+import qualified Prelude ()
 
 -- Language = u a v a w for any words u,v,w and atom a
 -- The complement of 'all distinct atoms'
@@ -45,6 +45,7 @@ exampleNFA1 = automaton
 data NFA2 = Initial2 | Distinguished Atom | Count Int
   deriving (Show, Eq, Ord, Generic, NominalType, Contextual)
 
+exampleNFA2 :: Int -> Automaton NFA2 Atom
 exampleNFA2 n = automaton
     (singleton Initial2
         `union` map Distinguished atoms

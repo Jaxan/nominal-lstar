@@ -18,7 +18,7 @@ learn alphSet = do
     let h = case read learnerName of
             NomLStar    -> learnAngluinRows t
             NomLStarCol -> learnAngluin t
-            NomNLStar   -> learnBollig t
+            NomNLStar   -> learnBollig 0 0 t
     hPrint stderr h
 
 main :: IO ()

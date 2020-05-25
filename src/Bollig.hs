@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# language RecordWildCards #-}
 module Bollig where
 
 import AbstractLStar
@@ -9,11 +9,11 @@ import Teacher
 import Data.List (tails)
 import Debug.Trace
 import NLambda
+import Prelude (Bool (..), Int, Maybe (..), fst, show, ($), (++), (.))
 import qualified Prelude hiding ()
-import Prelude (Bool(..), Maybe(..), ($), (.), (++), fst, show)
 
 rowUnion :: NominalType i => Set (BRow i) -> BRow i
-rowUnion set = Prelude.uncurry union . setTrueFalse . partition (\(_, f) -> f) $ map (\is -> (is, exists fromBool (mapFilter (\(is2, b) -> maybeIf (is `eq` is2) b) flatSet))) allIs
+rowUnion set = Prelude.uncurry union . setTrueFalse . partition snd $ map (\is -> (is, exists fromBool (mapFilter (\(is2, b) -> maybeIf (is `eq` is2) b) flatSet))) allIs
     where
         flatSet = sum set
         allIs = map fst flatSet
@@ -28,7 +28,7 @@ sublang :: NominalType i => BRow i -> BRow i -> Formula
 sublang r1 r2 = forAll fromBool $ pairsWithFilter (\(i1, f1) (i2, f2) -> maybeIf (i1 `eq` i2) (f1 `boolImplies` f2)) r1 r2
 
 sublangs :: NominalType i => BRow i -> Set (BRow i) -> Set (BRow i)
-sublangs r set = filter (\r2 -> r2 `sublang` r) set
+sublangs r = filter (`sublang` r)
 
 rfsaClosednessTest2 :: LearnableAlphabet i => State i -> TestResult i
 rfsaClosednessTest2 State{..} = case solve (isEmpty defect) of
@@ -69,6 +69,6 @@ constructHypothesisBollig State{..} = automaton q a d i f
 makeCompleteBollig :: LearnableAlphabet i => TableCompletionHandler i
 makeCompleteBollig = makeCompleteWith [rfsaClosednessTest2, rfsaConsistencyTest]
 
-learnBollig :: LearnableAlphabet i => Teacher i -> Automaton (BRow i) i
-learnBollig teacher = learn makeCompleteBollig useCounterExampleMP constructHypothesisBollig teacher initial
-    where initial = constructEmptyState teacher
+learnBollig :: LearnableAlphabet i => Int -> Int -> Teacher i -> Automaton (BRow i) i
+learnBollig k n teacher = learn makeCompleteBollig useCounterExampleMP constructHypothesisBollig teacher initial
+    where initial = constructEmptyState k n teacher

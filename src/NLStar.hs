@@ -57,4 +57,4 @@ makeCompleteNonDet = makeCompleteWith [nonDetClosednessTest]
 -- Default: use counter examples in columns, which is slightly faster
 learnNonDet :: LearnableAlphabet i => Teacher i -> Automaton (BRow i) i
 learnNonDet teacher = learn makeCompleteNonDet useCounterExampleMP constructHypothesisNonDet teacher initial
-    where initial = constructEmptyState teacher
+    where initial = constructEmptyState 0 0 teacher

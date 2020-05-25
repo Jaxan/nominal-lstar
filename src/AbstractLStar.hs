@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# language RecordWildCards #-}
 module AbstractLStar where
 
 import ObservationTable
@@ -59,19 +59,21 @@ learn makeComplete handleCounterExample constructHypothesis teacher s =
         eqloop s2 h = case equivalent teacher h of
                           Nothing -> trace "Yes" $ h
                           Just ces -> trace "No" $
-                              case isTrue . isEmpty $ realces h ces of
-                                  True -> eqloop s2 h
-                                  False ->
+                              if isTrue . isEmpty $ realces h ces
+                                  then eqloop s2 h
+                                  else
                                       let s3 = handleCounterExample teacher s2 ces in
                                       learn makeComplete handleCounterExample constructHypothesis teacher s3
         realces h ces = NLambda.filter (\(ce, a) -> a `neq` accepts h ce) $ membership teacher ces
 
--- Initial state is always the same in our case
-constructEmptyState :: LearnableAlphabet i => Teacher i -> State i
-constructEmptyState teacher =
+-- Initialise with the trivial table
+-- We allow to initialise with all words of length <= k,n for rows and columns
+-- Normally one should take k = n = 0
+constructEmptyState :: LearnableAlphabet i => Int -> Int -> Teacher i -> State i
+constructEmptyState k n teacher =
     let aa = Teacher.alphabet teacher in
-    let ss = singleton [] in
+    let ss = replicateSetUntil k aa in
     let ssa = pairsWith (\s a -> s ++ [a]) ss aa in
-    let ee = singleton [] in
+    let ee = replicateSetUntil n aa in
     let t = fillTable teacher (ss `union` ssa) ee in
     State{..}

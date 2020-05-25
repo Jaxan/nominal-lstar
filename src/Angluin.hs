@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# language RecordWildCards #-}
 module Angluin where
 
 import AbstractLStar
@@ -8,8 +8,8 @@ import Teacher
 import Data.List (inits, tails)
 import Debug.Trace
 import NLambda
+import Prelude (Bool (..), Maybe (..), fst, id, show, ($), (++), (.))
 import qualified Prelude hiding ()
-import Prelude (Bool(..), Maybe(..), id, ($), (.), (++), fst, show)
 
 justOne :: (Contextual a, NominalType a) => Set a -> Set a
 justOne s = mapFilter id . orbit [] . element $ s
@@ -70,12 +70,12 @@ makeCompleteAngluin = makeCompleteWith [closednessTest, consistencyTestDirect]
 -- Default: use counter examples in columns, which is slightly faster
 learnAngluin :: LearnableAlphabet i => Teacher i -> Automaton (BRow i) i
 learnAngluin teacher = learn makeCompleteAngluin useCounterExampleMP constructHypothesis teacher initial
-    where initial = constructEmptyState teacher
+    where initial = constructEmptyState 0 0 teacher
 
 -- The "classical" version, where counter examples are added as rows
 learnAngluinRows :: LearnableAlphabet i => Teacher i -> Automaton (BRow i) i
 learnAngluinRows teacher = learn makeCompleteAngluin useCounterExampleAngluin constructHypothesis teacher initial
-    where initial = constructEmptyState teacher
+    where initial = constructEmptyState 0 0 teacher
 
 
 -- Below are some variations of the above functions with different

@@ -3,6 +3,8 @@ module Examples
     , module Examples.Contrived
     , module Examples.ContrivedNFAs
     , module Examples.Fifo
+    , module Examples.NonResidual
+    , module Examples.Residual
     , module Examples.RunningExample
     , module Examples.Stack
     ) where
@@ -10,6 +12,8 @@ module Examples
 import           Examples.Contrived
 import           Examples.ContrivedNFAs
 import           Examples.Fifo
+import           Examples.NonResidual
+import           Examples.Residual
 import           Examples.RunningExample
 import           Examples.Stack
 import           NLambda            (Atom)

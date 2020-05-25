@@ -12,13 +12,16 @@ import           NLambda
 
 import           Prelude hiding (map)
 
-data Learner = NomLStar | NomLStarCol | NomNLStar
+data Learner
+  = NomLStar -- nominal L* for nominal automata
+  | NomLStarCol -- nominal L* with counterexamples as columns (suffix closed)
+  | NomNLStar -- NL* for nominal automata, counterexamples as columns (suffix closed)
   deriving (Show, Read)
 
 data Teacher = EqDFA | EqNFA Int
   deriving (Show, Read)
 
-data Aut = Fifo Int | Stack Int | Running Int | NFA1 | Bollig Int
+data Aut = Fifo Int | Stack Int | Running Int | NFA1 | Bollig Int | NonResidual | Residual1 | Residual2
   deriving (Show, Read)
 
 -- existential wrapper
@@ -32,6 +35,9 @@ mainExample learnerName teacherName autName = do
             Running n -> A $ Examples.runningExample atoms n
             NFA1      -> A $ Examples.exampleNFA1
             Bollig n  -> A $ Examples.exampleNFA2 n
+            NonResidual -> A $ Examples.exampleNonResidual
+            Residual1 -> A $ Examples.exampleResidual1
+            Residual2 -> A $ Examples.exampleResidual2
     let teacher = case read teacherName of
             EqDFA   -> teacherWithTarget automaton
             EqNFA k -> teacherWithTargetNonDet k automaton

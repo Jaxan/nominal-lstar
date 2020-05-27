@@ -1,0 +1,62 @@
+cabal-version:       2.2
+name:                nominal-lstar
+version:             0.1.0.0
+author:              Joshua Moerman
+copyright:           (c) 2016 - 2020, Joshua Moerman
+build-type:          Simple
+extra-source-files:  README.md
+
+common stuff
+  default-language:  Haskell2010
+  ghc-options:       -O2 -Wall
+  build-depends:
+    base >= 4.8 && < 5,
+    containers,
+    haskeline,
+    mtl,
+    NLambda >= 1.1
+
+library
+  import: stuff
+  hs-source-dirs: src
+  exposed-modules:
+    AbstractLStar,
+    Angluin,
+    Bollig,
+    Examples,
+    Examples.Contrived,
+    Examples.ContrivedNFAs,
+    Examples.Fifo,
+    Examples.NonResidual,
+    Examples.Residual,
+    Examples.RunningExample,
+    Examples.Stack,
+    NLStar,
+    ObservationTable,
+    Teacher,
+    Teachers.Teacher,
+    Teachers.Terminal,
+    Teachers.Whitebox
+
+executable NominalAngluin
+  import: stuff
+  hs-source-dirs: app
+  main-is: Main.hs
+  build-depends:
+    nominal-lstar
+
+executable NominalAngluin2
+  import: stuff
+  hs-source-dirs: app
+  main-is: Main2.hs
+  build-depends:
+    nominal-lstar
+
+benchmark bench
+  import: stuff
+  hs-source-dirs: bench
+  type: exitcode-stdio-1.0
+  main-is: Bench.hs
+  build-depends:
+    criterion,
+    nominal-lstar

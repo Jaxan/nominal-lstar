@@ -45,7 +45,7 @@ mainExample learnerName teacherName autName = do
     let h = case read learnerName of
             NomLStar    -> learnAngluinRows teacher
             NomLStarCol -> learnAngluin teacher
-            NomNLStar   -> learnBollig 1 1 teacher
+            NomNLStar   -> learnBollig 0 0 teacher
     print h
 
 mainWithIO :: String -> IO ()

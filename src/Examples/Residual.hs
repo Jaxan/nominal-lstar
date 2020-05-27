@@ -15,6 +15,7 @@ import qualified Prelude ()
 data Res1 a = QR1 a | QR2 | QAncStar
   deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
 
+-- Language L = { w a | a fresh for w }, but anchored with a new symbol
 exampleResidual1 :: Automaton (Res1 Atom) DataInput
 exampleResidual1 = automaton
     -- state space

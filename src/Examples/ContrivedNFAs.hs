@@ -57,4 +57,3 @@ exampleNFA2 n = automaton
         `union` sum (fromList [map (Count i, , Count (i+1)) atoms | i <- [0 .. n-1]]))
     (singleton Initial2)
     (singleton (Count n))
-

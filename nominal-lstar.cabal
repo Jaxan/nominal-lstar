@@ -58,5 +58,5 @@ benchmark bench
   type: exitcode-stdio-1.0
   main-is: Bench.hs
   build-depends:
-    criterion,
+    gauge,
     nominal-lstar

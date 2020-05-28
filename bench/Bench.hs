@@ -1,11 +1,18 @@
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
 import Bollig
 import Examples
 import Teacher
 
-import Criterion.Main
+import Gauge.Main
+import Gauge.Main.Options
 
-main :: IO ()
-main = defaultMain [
+-- Run a single test since these are slow benchmarks
+myConfig = defaultConfig
+  { quickMode = True
+  , includeFirstIter = True
+  }
+
+main = defaultMainWith myConfig [
   bgroup "NomNLStar"
     [ bench "NFA1 -" $ whnf (learnBollig 0 0) (teacherWithTargetNonDet 2 Examples.exampleNFA1)
     , bench "NFA2 1" $ whnf (learnBollig 0 0) (teacherWithTargetNonDet 3 (Examples.exampleNFA2 1))

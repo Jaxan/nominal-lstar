@@ -9,7 +9,7 @@ import NLambda
 
 type TableCompletionHandler i = Teacher i -> State i -> State i
 type CounterExampleHandler i  = Teacher i -> State i -> Set [i] -> State i
-type HypothesisConstruction i = State i -> Automaton (BRow i) i
+type HypothesisConstruction i hq = State i -> Automaton hq i
 
 data TestResult i
     = Succes                     -- test succeeded, no changes required
@@ -39,13 +39,13 @@ makeCompleteWith tests teacher state0 = go tests state0
 -- Simple general learning loop: 1. make the table complete 2. construct
 -- hypothesis 3. ask teacher. Repeat until done. If the teacher is adequate
 -- termination implies correctness.
-learn :: LearnableAlphabet i
+learn :: (NominalType hq, Show hq, LearnableAlphabet i)
   => TableCompletionHandler i
   -> CounterExampleHandler i
-  -> HypothesisConstruction i
+  -> HypothesisConstruction i hq
   -> Teacher i
   -> State i
-  -> Automaton (BRow i) i
+  -> Automaton hq i
 learn makeComplete handleCounterExample constructHypothesis teacher s =
     trace "##################" $
     trace "1. Making it complete and consistent" $

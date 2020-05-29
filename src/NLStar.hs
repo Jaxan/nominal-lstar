@@ -30,6 +30,8 @@ import Prelude hiding (and, curry, filter, lookup, map, not, sum)
 
 -- We can determine its completeness with the following
 -- It returns all witnesses (of the form sa) for incompleteness
+
+{- Disabled, didn't work anymore, and I don't know what it does
 nonDetClosednessTest :: NominalType i => State i -> TestResult i
 nonDetClosednessTest State{..} = case solve (isEmpty defect) of
     Just True  -> Succes
@@ -55,3 +57,4 @@ makeCompleteNonDet = makeCompleteWith [nonDetClosednessTest]
 learnNonDet :: LearnableAlphabet i => Teacher i -> Automaton (BRow i) i
 learnNonDet teacher = learn makeCompleteNonDet useCounterExampleMP constructHypothesisNonDet teacher initial
     where initial = constructEmptyState 0 0 teacher
+-}

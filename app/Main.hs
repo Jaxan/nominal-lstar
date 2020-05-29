@@ -42,20 +42,18 @@ mainExample learnerName teacherName autName = do
             EqDFA         -> teacherWithTarget automaton
             EqNFA k       -> teacherWithTargetNonDet k automaton
             EquivalenceIO -> teacherWithTargetAndIO automaton
-    let h = case read learnerName of
-            NomLStar    -> learnAngluinRows teacher
-            NomLStarCol -> learnAngluin teacher
-            NomNLStar   -> learnBollig 0 0 teacher
-    print h
+    case read learnerName of
+            NomLStar    -> print $ learnAngluinRows teacher
+            NomLStarCol -> print $ learnAngluin teacher
+            NomNLStar   -> print $ learnBollig 0 0 teacher
 
 mainWithIO :: String -> IO ()
 mainWithIO learnerName = do
     let t = teacherWithIO atoms
-    let h = case read learnerName of
-            NomLStar    -> learnAngluinRows t
-            NomLStarCol -> learnAngluin t
-            NomNLStar   -> learnBollig 0 0 t
-    print h
+    case read learnerName of
+            NomLStar    -> print $ learnAngluinRows t
+            NomLStarCol -> print $ learnAngluin t
+            NomNLStar   -> print $ learnBollig 0 0 t
 
 main :: IO ()
 main = do

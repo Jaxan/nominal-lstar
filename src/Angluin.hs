@@ -8,7 +8,7 @@ import Teacher
 import Data.List (inits, tails)
 import Debug.Trace
 import NLambda
-import Prelude (Bool (..), Maybe (..), fst, id, show, ($), (++), (.))
+import Prelude (Bool (..), Maybe (..), id, show, ($), (++), (.))
 import qualified Prelude hiding ()
 
 justOne :: (Contextual a, NominalType a) => Set a -> Set a
@@ -95,7 +95,7 @@ consistencyTest2 State{..} = case solve (isEmpty defect) of
         defect = triplesWithFilter (
                      \s1 s2 a -> maybeIf (candidate s1 s2 a) ((s1, s2, a), discrepancy (rowa t s1 a) (rowa t s2 a))
                  ) ss ss aa
-        columns = sum $ map (\((s1,s2,a),es) -> map (a:) es) defect
+        columns = sum $ map (\((_,_,a),es) -> map (a:) es) defect
 
 -- Some coauthor's faster version
 consistencyTest3 :: NominalType i => State i -> TestResult i
@@ -109,4 +109,4 @@ consistencyTest3 State{..} = case solve (isEmpty defect) of
         defect = pairsWithFilter (
                      \(s1, s2) a -> maybeIf (candidate1 s1 s2 a) ((s1, s2, a), discrepancy (rowa t s1 a) (rowa t s2 a))
                  ) rowPairs aa
-        columns = sum $ map (\((s1,s2,a),es) -> map (a:) es) defect
+        columns = sum $ map (\((_,_,a),es) -> map (a:) es) defect

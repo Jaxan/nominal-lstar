@@ -14,11 +14,10 @@ learn :: (Read i, Contextual i, NominalType i, Show i) => Set i -> IO ()
 learn alphSet = do
     [learnerName] <- getArgs
     let t = teacherWithIO2 alphSet
-    let h = case read learnerName of
-            NomLStar    -> learnAngluinRows t
-            NomLStarCol -> learnAngluin t
-            NomNLStar   -> learnBollig 0 0 t
-    hPrint stderr h
+    case read learnerName of
+            NomLStar    -> hPrint stderr $ learnAngluinRows t
+            NomLStarCol -> hPrint stderr $ learnAngluin t
+            NomNLStar   -> hPrint stderr $ learnBollig 0 0 t
 
 main :: IO ()
 main = do

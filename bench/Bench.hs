@@ -10,6 +10,7 @@ import Gauge.Main.Options
 myConfig = defaultConfig
   { quickMode = True
   , includeFirstIter = True
+  , csvFile = Just "bench.csv"
   }
 
 main = defaultMainWith myConfig [

@@ -9,7 +9,6 @@ import Data.List (inits, tails)
 import Debug.Trace
 import NLambda
 import Prelude (Bool (..), Maybe (..), id, show, ($), (++), (.))
-import qualified Prelude hiding ()
 
 justOne :: (Contextual a, NominalType a) => Set a -> Set a
 justOne s = mapFilter id . orbit [] . element $ s

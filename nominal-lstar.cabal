@@ -31,7 +31,6 @@ library
     Examples.Residual,
     Examples.RunningExample,
     Examples.Stack,
-    NLStar,
     ObservationTable,
     Teacher,
     Teachers.Teacher,

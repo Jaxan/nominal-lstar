@@ -1,14 +1,16 @@
+{-# language PartialTypeSignatures #-}
 {-# language RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 module Bollig where
 
 import AbstractLStar
-import Angluin
-import ObservationTable
+import SimpleObservationTable
 import Teacher
 
+import Data.List (tails)
 import Debug.Trace
-import NLambda
-import Prelude (Bool (..), Int, Maybe (..), ($), (++), (.))
+import NLambda hiding (alphabet)
+import Prelude (Bool (..), Int, Maybe (..), Show (..), snd, ($), (++), (.))
 
 -- Comparing two graphs of a function is inefficient in NLambda,
 -- because we do not have a map data structure. (So the only way
@@ -17,74 +19,91 @@ import Prelude (Bool (..), Int, Maybe (..), ($), (++), (.))
 -- as a subset.
 -- This does hinder generalisations to other nominal join semi-
 -- lattices than the Booleans.
-brow :: (NominalType i) => Table i Bool -> [i] -> Set [i]
-brow t is = mapFilter (\((a,b),c) -> maybeIf (eq is a /\ fromBool c) b) t
 
-rfsaClosednessTest :: LearnableAlphabet i => Set (Set [i]) -> State i -> TestResult i
-rfsaClosednessTest primesUpp State{..} = case solve (isEmpty defect) of
+-- The teacher interface is slightly inconvenient
+-- But this is for a good reason. The type [i] -> o
+-- doesn't work well in nlambda
+mqToBool :: (NominalType i, Contextual i) => Teacher i -> MQ i Bool
+mqToBool teacher words = simplify answer
+    where
+        realQ = membership teacher words
+        (inw, outw) = partition snd realQ
+        answer = map (setB True) inw `union` map (setB False) outw
+        setB b (w, _) = (w, b)
+
+tableAt :: NominalType i => BTable i -> [i] -> [i] -> Formula
+tableAt t s e = singleton True `eq` mapFilter (\(i, o) -> maybeIf ((s ++ e) `eq` i) o) (content t)
+
+rfsaClosednessTest :: NominalType i => Set (BRow i) -> BTable i -> TestResult i
+rfsaClosednessTest primesUpp t@Table{..} = case solve (isEmpty defect) of
     Just True  -> Succes
     Just False -> trace "Not closed" $ Failed defect empty
     Nothing    -> trace "@@@ Unsolved Formula (rfsaClosednessTest) @@@" $
                   Failed defect empty
     where
-        defect = filter (\ua -> brow t ua `neq` sum (filter (`isSubsetOf` brow t ua) primesUpp)) ssa
+        defect = filter (\ua -> brow t ua `neq` sum (filter (`isSubsetOf` brow t ua) primesUpp)) (rowsExt t)
 
-rfsaConsistencyTest :: LearnableAlphabet i => State i -> TestResult i
-rfsaConsistencyTest State{..} = case solve (isEmpty defect) of
+rfsaConsistencyTest :: NominalType i => BTable i -> TestResult i
+rfsaConsistencyTest t@Table{..} = case solve (isEmpty defect) of
     Just True  -> Succes
     Just False -> trace "Not consistent" $ Failed empty defect
     Nothing    -> trace "@@@ Unsolved Formula (rfsaConsistencyTest) @@@" $
                   Failed empty defect
     where
-        candidates = pairsWithFilter (\u1 u2 -> maybeIf (brow t u2 `isSubsetOf` brow t u1) (u1, u2)) ss ss
-        defect = triplesWithFilter (\(u1, u2) a v -> maybeIf (not (tableAt t (u1 ++ [a]) v) /\ tableAt t (u2 ++ [a]) v) (a:v)) candidates aa ee
+        candidates = pairsWithFilter (\u1 u2 -> maybeIf (brow t u2 `isSubsetOf` brow t u1) (u1, u2)) rows rows
+        defect = triplesWithFilter (\(u1, u2) a v -> maybeIf (not (tableAt t (u1 ++ [a]) v) /\ tableAt t (u2 ++ [a]) v) (a:v)) candidates alph columns
 
--- Note that we do not have the same type of states as the angluin algorithm.
--- We have Set [i] instead of BRow i. (However, They are isomorphic.)
-constructHypothesisBollig :: NominalType i => Set (Set [i]) -> State i -> Automaton (Set [i]) i
-constructHypothesisBollig primesUpp State{..} = automaton q aa d i f
+constructHypothesisBollig :: NominalType i => Set (BRow i) -> BTable i -> Automaton (BRow i) i
+constructHypothesisBollig primesUpp t@Table{..} = automaton q alph d i f
     where
         q = primesUpp
         i = filter (`isSubsetOf` brow t []) q
         f = filter (`contains` []) q
-        d0 = triplesWithFilter (\s a s2 -> maybeIf (brow t s2 `isSubsetOf` brow t (s ++ [a])) (brow t s, a, brow t s2)) ss aa ss
+        -- TODO: compute indices of primesUpp only once
+        d0 = triplesWithFilter (\s a s2 -> maybeIf (brow t s2 `isSubsetOf` brow t (s ++ [a])) (brow t s, a, brow t s2)) rows alph rows
         d = filter (\(q1, _, q2) -> q1 `member` q /\ q2 `member` q) d0
 
---makeCompleteBollig :: LearnableAlphabet i => TableCompletionHandler i
---makeCompleteBollig = makeCompleteWith [rfsaClosednessTest, rfsaConsistencyTest]
+-- Adds all suffixes as columns
+-- TODO: do actual Rivest and Schapire
+addCounterExample :: (NominalType i, _) => MQ i Bool -> Set [i] -> BTable i -> BTable i
+addCounterExample mq ces t@Table{..} =
+    trace ("Using ce: " ++ show ces) $
+    let newColumns = sum . map (fromList . tails) $ ces
+        newColumnsRed = newColumns \\ columns
+     in addColumns mq newColumnsRed t
 
-learnBollig :: LearnableAlphabet i => Int -> Int -> Teacher i -> Automaton (Set [i]) i
---learnBollig k n teacher = learn makeCompleteBollig useCounterExampleMP constructHypothesisBollig teacher initial
---    where initial = constructEmptyState k n teacher
+learnBollig :: (NominalType i, Contextual i, _) => Int -> Int -> Teacher i -> Automaton (BRow i) i
+learnBollig k n teacher = learnBolligLoop teacher (initialTableSize (mqToBool teacher) (alphabet teacher) k n)
 
-learnBollig k n teacher = learnBolligLoop teacher (constructEmptyState k n teacher)
-
-learnBolligLoop teacher s1@State{..} =
+learnBolligLoop :: _ => Teacher i -> BTable i -> Automaton (BRow i) i
+learnBolligLoop teacher t@Table{..} =
     let
-        allRowsUpp = map (brow t) ss
-        allRows = allRowsUpp `union` map (brow t) ssa
+        allRowsUpp = map (brow t) rows
+        allRows = allRowsUpp `union` map (brow t) (rowsExt t)
         primesUpp = filter (\r -> isNotEmpty r /\ r `neq` sum (filter (`isSubsetOf` r) (allRows \\ orbit [] r))) allRowsUpp
 
         -- No worry, these are computed lazily
-        closednessRes = rfsaClosednessTest primesUpp s1
-        consistencyRes = rfsaConsistencyTest s1
-        h = constructHypothesisBollig primesUpp s1
+        closednessRes = rfsaClosednessTest primesUpp t
+        consistencyRes = rfsaConsistencyTest t
+        hyp = constructHypothesisBollig primesUpp t
     in
         trace "1. Making it rfsa closed" $
         case closednessRes of
             Failed newRows _ ->
-                let state2 = simplify $ addRows teacher newRows s1 in
+                let state2 = simplify $ addRows (mqToBool teacher) newRows t in
+                trace ("newrows = " ++ show newRows) $
                 learnBolligLoop teacher state2
             Succes ->
-                trace "1. Making it rfsa consistent" $
+                trace "2. Making it rfsa consistent" $
                 case consistencyRes of
                     Failed _ newColumns ->
-                        let state2 = simplify $ addColumns teacher newColumns s1 in
+                        let state2 = simplify $ addColumns (mqToBool teacher) newColumns t in
+                        trace ("newcols = " ++ show newColumns) $
                         learnBolligLoop teacher state2
                     Succes ->
-                        traceShow h $
+                        traceShow hyp $
                         trace "3. Equivalent? " $
-                        eqloop s1 h
+                        eqloop t hyp
                         where
                             eqloop s2 h = case equivalent teacher h of
                                             Nothing -> trace "Yes" h
@@ -92,7 +111,6 @@ learnBolligLoop teacher s1@State{..} =
                                                 if isTrue . isEmpty $ realces h ces
                                                     then eqloop s2 h
                                                     else
-                                                        let s3 = useCounterExampleMP teacher s2 ces in
+                                                        let s3 = addCounterExample (mqToBool teacher) ces s2 in
                                                         learnBolligLoop teacher s3
                             realces h ces = NLambda.filter (\(ce, a) -> a `neq` accepts h ce) $ membership teacher ces
-

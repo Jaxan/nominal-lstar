@@ -15,7 +15,7 @@ myConfig = defaultConfig
 
 main = defaultMainWith myConfig [
   bgroup "NomNLStar"
-    [ bench "NFA1 -" $ whnf (learnBollig 0 0) (teacherWithTargetNonDet 2 Examples.exampleNFA1)
+    [ bench "NFA1 -" $ whnf (learnBollig 1 1) (teacherWithTargetNonDet 2 Examples.exampleNFA1)
     , bench "NFA2 1" $ whnf (learnBollig 0 0) (teacherWithTargetNonDet 3 (Examples.exampleNFA2 1))
     , bench "NFA2 2" $ whnf (learnBollig 0 0) (teacherWithTargetNonDet 4 (Examples.exampleNFA2 2))
     ]

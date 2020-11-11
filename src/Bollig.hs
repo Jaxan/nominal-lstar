@@ -23,8 +23,8 @@ import Prelude (Bool (..), Int, Maybe (..), Show (..), snd, ($), (++), (.))
 -- The teacher interface is slightly inconvenient
 -- But this is for a good reason. The type [i] -> o
 -- doesn't work well in nlambda
-mqToBool :: (NominalType i, Contextual i) => Teacher i -> MQ i Bool
-mqToBool teacher words = simplify answer
+mqToBool :: NominalType i => Teacher i -> MQ i Bool
+mqToBool teacher words = answer
     where
         realQ = membership teacher words
         (inw, outw) = partition snd realQ
@@ -60,27 +60,27 @@ constructHypothesisBollig primesUpp t@Table{..} = automaton q alph d i f
         i = filter (`isSubsetOf` brow t []) q
         f = filter (`contains` []) q
         -- TODO: compute indices of primesUpp only once
-        d0 = triplesWithFilter (\s a s2 -> maybeIf (brow t s2 `isSubsetOf` brow t (s ++ [a])) (brow t s, a, brow t s2)) rows alph rows
-        d = filter (\(q1, _, q2) -> q1 `member` q /\ q2 `member` q) d0
+        d0 = triplesWithFilter (\s a bs2 -> maybeIf (bs2 `isSubsetOf` brow t (s ++ [a])) (brow t s, a, bs2)) rows alph q
+        d = filter (\(q1, _, _) -> q1 `member` q) d0
 
 -- Adds all suffixes as columns
 -- TODO: do actual Rivest and Schapire
-addCounterExample :: (NominalType i, _) => MQ i Bool -> Set [i] -> BTable i -> BTable i
+addCounterExample :: NominalType i => MQ i Bool -> Set [i] -> BTable i -> BTable i
 addCounterExample mq ces t@Table{..} =
-    trace ("Using ce: " ++ show ces) $
     let newColumns = sum . map (fromList . tails) $ ces
         newColumnsRed = newColumns \\ columns
      in addColumns mq newColumnsRed t
 
-learnBollig :: (NominalType i, Contextual i, _) => Int -> Int -> Teacher i -> Automaton (BRow i) i
+learnBollig :: (NominalType i, _) => Int -> Int -> Teacher i -> Automaton (BRow i) i
 learnBollig k n teacher = learnBolligLoop teacher (initialTableSize (mqToBool teacher) (alphabet teacher) k n)
 
-learnBolligLoop :: _ => Teacher i -> BTable i -> Automaton (BRow i) i
+learnBolligLoop :: (NominalType i, _) => Teacher i -> BTable i -> Automaton (BRow i) i
 learnBolligLoop teacher t@Table{..} =
     let
-        allRowsUpp = map (brow t) rows
-        allRows = allRowsUpp `union` map (brow t) (rowsExt t)
-        primesUpp = filter (\r -> isNotEmpty r /\ r `neq` sum (filter (`isSubsetOf` r) (allRows \\ orbit [] r))) allRowsUpp
+        -- These simplify's do speed up
+        allRowsUpp = simplify $ map (brow t) rows
+        allRows = simplify $ allRowsUpp `union` map (brow t) (rowsExt t)
+        primesUpp = simplify $ filter (\r -> isNotEmpty r /\ r `neq` sum (filter (`isSubsetOf` r) (allRows \\ orbit [] r))) allRowsUpp
 
         -- No worry, these are computed lazily
         closednessRes = rfsaClosednessTest primesUpp t
@@ -90,14 +90,14 @@ learnBolligLoop teacher t@Table{..} =
         trace "1. Making it rfsa closed" $
         case closednessRes of
             Failed newRows _ ->
-                let state2 = simplify $ addRows (mqToBool teacher) newRows t in
+                let state2 = addRows (mqToBool teacher) newRows t in
                 trace ("newrows = " ++ show newRows) $
                 learnBolligLoop teacher state2
             Succes ->
                 trace "2. Making it rfsa consistent" $
                 case consistencyRes of
                     Failed _ newColumns ->
-                        let state2 = simplify $ addColumns (mqToBool teacher) newColumns t in
+                        let state2 = addColumns (mqToBool teacher) newColumns t in
                         trace ("newcols = " ++ show newColumns) $
                         learnBolligLoop teacher state2
                     Succes ->
@@ -112,5 +112,6 @@ learnBolligLoop teacher t@Table{..} =
                                                     then eqloop s2 h
                                                     else
                                                         let s3 = addCounterExample (mqToBool teacher) ces s2 in
+                                                        trace ("Using ce: " ++ show ces) $
                                                         learnBolligLoop teacher s3
                             realces h ces = NLambda.filter (\(ce, a) -> a `neq` accepts h ce) $ membership teacher ces

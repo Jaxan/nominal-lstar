@@ -12,26 +12,25 @@ import GHC.Generics (Generic)
 import Prelude (Eq, Ord, Read, Show)
 import qualified Prelude ()
 
-data Res1 a = QR1 a | QR2 | QAncStar
+data Res1 a = QR1 a | QR2 | QEmpty
   deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
 
--- Language L = { w a | a fresh for w }, but anchored with a new symbol
+-- Language L = { w a | a fresh for w } + {eps}, but anchored with a new symbol
 exampleResidual1 :: Automaton (Res1 Atom) DataInput
 exampleResidual1 = automaton
     -- state space
-    (fromList [QR2, QAncStar]
+    (fromList [QR2, QEmpty]
         `union` map QR1 atoms)
     -- alphabet
     (map Put atoms `union` map Get atoms)
     -- transition relation
     (map (\a -> (QR1 a, Get a, QR1 a)) atoms
         `union` pairsWithFilter (\a b -> maybeIf (a `neq` b) (QR1 a, Put b, QR1 a)) atoms atoms
-        `union` map (\a -> (QR1 a, Put a, QR2)) atoms
-        `union` map (\a -> (QAncStar, Put a, QAncStar)) atoms)
+        `union` map (\a -> (QR1 a, Put a, QR2)) atoms)
     -- initial states
-    (map QR1 atoms `union` singleton QAncStar)
+    (map QR1 atoms `union` singleton QEmpty)
     -- final states
-    (fromList [QR2, QAncStar])
+    (fromList [QR2, QEmpty])
 
 
 -- Example when learning breaks

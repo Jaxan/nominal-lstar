@@ -11,7 +11,7 @@ import NLambda
 import Prelude (Bool (..), Maybe (..), id, show, ($), (++), (.))
 
 justOne :: (Contextual a, NominalType a) => Set a -> Set a
-justOne s = mapFilter id . orbit [] . element $ s
+justOne = mapFilter id . orbit [] . element
 
 -- We can determine its completeness with the following
 -- It returns all witnesses (of the form sa) for incompleteness
@@ -39,14 +39,13 @@ consistencyTestDirect State{..} = case solve (isEmpty defect) of
 -- Given a C&C table, constructs an automaton. The states are given by 2^E (not
 -- necessarily equivariant functions)
 constructHypothesis :: LearnableAlphabet i => State i -> Automaton (BRow i) i
-constructHypothesis State{..} = simplify $ automaton q a d i f
+constructHypothesis State{..} = simplify $ automaton q aa d i f
     where
         q = map (row t) ss
-        a = aa
         d = pairsWith (\s a -> (row t s, a, rowa t s a)) ss aa
         i = singleton $ row t []
         f = mapFilter (\s -> maybeIf (toform $ apply t (s, [])) (row t s)) ss
-        toform s = forAll id . map fromBool $ s
+        toform = forAll id . map fromBool
 
 -- Extends the table with all prefixes of a set of counter examples.
 useCounterExampleAngluin :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> State i

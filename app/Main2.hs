@@ -7,6 +7,9 @@ import NLambda
 import System.Environment
 import System.IO
 
+-- This Main2 file was used for automated benchmarking, and only accepts
+-- a specific protocol. For normal usage, see Main.hs.
+
 data Learner = NomLStar | NomLStarCol | NomNLStar
   deriving (Show, Read)
 

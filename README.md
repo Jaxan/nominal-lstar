@@ -34,7 +34,7 @@ tell you what to do. (If you need any help, send me a message.)
 # Running
 
 Stack will produce a binary in the `.stack-works` directory, which can
-be invoked directly. Alternatively one can run `stack exec NominalAngluin`.
+be invoked directly. Alternatively one can run `stack exec nominal-lstar`.
 There is two modes of operation: Running the examples, or running it
 interactively.
 
@@ -75,7 +75,7 @@ stack data structure):
 
 For example:
 ```
-stack exec NominalAngluin -- NomLStar EqDFA "Fifo 2"
+stack exec nominal-lstar -- NomLStar EqDFA "Fifo 2"
 ```
 
 The program will output all the intermediate hypotheses. And will terminate
@@ -95,7 +95,7 @@ We proved by hand that the learnt model did indeed accept the language.
 
 Run the tool like so:
 ```
-stack exec NominalAngluin -- <Leaner>
+stack exec nominal-lstar -- <Leaner>
 ```
 (So similar to the above case, but without specifying the equivalence
 checker and example.) The tool will ask you membership queries and
@@ -103,7 +103,7 @@ equivalence queries through the terminal. The alphabet is fixed in
 `Main.hs`, so change it if you need a different alphabet (it should
 work generically for any alphabet).
 
-Additionally, one can run the `NominalAngluin2` executable instead,
+Additionally, one can run the `nominal-lstar2` executable instead,
 if provides an easier to parse protocol for membership queries. Hence
 it is more suitable for automation. This will first ask for the alphabet
 which should be either `ATOMS` or `FIFO`.
@@ -149,4 +149,5 @@ A:
 
 * Better support for interactive communication.
 * Optimisation: add only one row/column to fix closedness/consistency
-
+* Simpler observation table
+* More efficient nominal NLStar

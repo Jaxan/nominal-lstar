@@ -2,9 +2,10 @@
 {-# language DeriveGeneric #-}
 module Examples.Stack (DataInput(..), stackExample) where
 
+import NLambda hiding (states)
+
 import Examples.Fifo (DataInput (..))
 import GHC.Generics (Generic)
-import NLambda
 import Prelude (Eq, Int, Maybe (..), Ord, Show, length, ($), (.), (>=))
 import qualified Prelude ()
 

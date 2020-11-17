@@ -38,14 +38,14 @@ library
     Teachers.Terminal,
     Teachers.Whitebox
 
-executable NominalAngluin
+executable nominal-lstar
   import: stuff
   hs-source-dirs: app
   main-is: Main.hs
   build-depends:
     nominal-lstar
 
-executable NominalAngluin2
+executable nominal-lstar2
   import: stuff
   hs-source-dirs: app
   main-is: Main2.hs

@@ -2,8 +2,9 @@
 {-# language DeriveGeneric #-}
 module Examples.Fifo (DataInput(..), fifoExample) where
 
+import NLambda hiding (states)
+
 import GHC.Generics (Generic)
-import NLambda
 import Prelude (Eq, Int, Maybe (..), Ord, Read, Show, length, reverse, ($), (+),
                 (-), (.), (>=))
 import qualified Prelude ()

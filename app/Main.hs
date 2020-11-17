@@ -2,10 +2,10 @@
 import Angluin
 import Bollig
 import Examples
-import ObservationTable
+import ObservationTable (LearnableAlphabet)
 import Teacher
 
-import NLambda
+import NLambda hiding (automaton)
 import Prelude hiding (map)
 import System.Environment
 
@@ -27,6 +27,7 @@ data Aut = Fifo Int | Stack Int | Running Int | NFA1 | Bollig Int | NonResidual 
 -- existential wrapper
 data A = forall q i . (LearnableAlphabet i, Read i, NominalType q, Show q) => A (Automaton q i)
 
+{- HLINT ignore "Redundant $" -}
 mainExample :: String -> String -> String -> IO ()
 mainExample learnerName teacherName autName = do
     A automaton <- return $ case read autName of
@@ -61,4 +62,20 @@ main = do
     case bla of
         [learnerName, teacherName, autName] -> mainExample learnerName teacherName autName
         [learnerName] -> mainWithIO learnerName
-        _ -> putStrLn "Give either 1 (for the IO teacher) or 3 (for automatic teacher) arguments"
+        _ -> help
+
+help :: IO ()
+help = do
+  putStrLn "Usage (for automated runs)"
+  putStrLn ""
+  putStrLn "    nominal-lstar <learner> <teacher> <automaton>"
+  putStrLn ""
+  putStrLn "or (for manual runs)"
+  putStrLn ""
+  putStrLn "    nominal-lstar <learner>"
+  putStrLn ""
+  putStrLn $ "where <learner> is any of " ++ show learners ++ ", <teacher> is any of " ++ show teachers ++ ", and <automaton> is any of " ++ show automata ++ ". (Replace 3 with any number you wish.)"
+  where
+    learners = [NomLStar, NomLStarCol, NomNLStar]
+    teachers = [EqDFA, EqNFA 3, EquivalenceIO]
+    automata = [Fifo 3, Stack 3, Running 3, NFA1, Bollig 3, NonResidual, Residual1, Residual2]

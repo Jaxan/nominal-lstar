@@ -10,8 +10,10 @@ import Debug.Trace
 import NLambda
 import Prelude (Bool (..), Maybe (..), id, show, ($), (++), (.))
 
+-- This was actually a pessimisation (often), also it sometimes crashes.
+-- So I changed it to a no-op.
 justOne :: (Contextual a, NominalType a) => Set a -> Set a
-justOne = mapFilter id . orbit [] . element
+justOne = id -- mapFilter id . orbit [] . element
 
 -- We can determine its completeness with the following
 -- It returns all witnesses (of the form sa) for incompleteness

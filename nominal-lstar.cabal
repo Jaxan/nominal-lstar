@@ -60,3 +60,12 @@ benchmark bench
   build-depends:
     gauge,
     nominal-lstar
+
+test-suite test
+  import: stuff
+  hs-source-dirs: test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  build-depends:
+    gauge,
+    nominal-lstar

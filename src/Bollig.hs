@@ -1,9 +1,9 @@
 {-# language PartialTypeSignatures #-}
-{-# language RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 module Bollig where
 
 import AbstractLStar
+import ObservationTableClass
 import SimpleObservationTable
 import Teacher
 
@@ -31,55 +31,53 @@ mqToBool teacher words = answer
         answer = map (setB True) inw `union` map (setB False) outw
         setB b (w, _) = (w, b)
 
-tableAt :: NominalType i => BTable i -> [i] -> [i] -> Formula
-tableAt t s e = singleton True `eq` mapFilter (\(i, o) -> maybeIf ((s ++ e) `eq` i) o) (content t)
-
 rfsaClosednessTest :: NominalType i => Set (BRow i) -> BTable i -> TestResult i
-rfsaClosednessTest primesUpp t@Table{..} = case solve (isEmpty defect) of
+rfsaClosednessTest primesUpp t = case solve (isEmpty defect) of
     Just True  -> Succes
     Just False -> trace "Not closed" $ Failed defect empty
     Nothing    -> trace "@@@ Unsolved Formula (rfsaClosednessTest) @@@" $
                   Failed defect empty
     where
-        defect = filter (\ua -> brow t ua `neq` sum (filter (`isSubsetOf` brow t ua) primesUpp)) (rowsExt t)
+        defect = filter (\ua -> row t ua `neq` sum (filter (`isSubsetOf` row t ua) primesUpp)) (rowsExt t)
 
 rfsaConsistencyTest :: NominalType i => BTable i -> TestResult i
-rfsaConsistencyTest t@Table{..} = case solve (isEmpty defect) of
+rfsaConsistencyTest t = case solve (isEmpty defect) of
     Just True  -> Succes
     Just False -> trace "Not consistent" $ Failed empty defect
     Nothing    -> trace "@@@ Unsolved Formula (rfsaConsistencyTest) @@@" $
                   Failed empty defect
     where
-        candidates = pairsWithFilter (\u1 u2 -> maybeIf (brow t u2 `isSubsetOf` brow t u1) (u1, u2)) rows rows
-        defect = triplesWithFilter (\(u1, u2) a v -> maybeIf (not (tableAt t (u1 ++ [a]) v) /\ tableAt t (u2 ++ [a]) v) (a:v)) candidates alph columns
+        candidates = pairsWithFilter (\u1 u2 -> maybeIf (row t u2 `isSubsetOf` row t u1) (u1, u2)) (rows t) (rows t)
+        defect = triplesWithFilter (\(u1, u2) a v -> maybeIf (not (tableAt2 (u1 ++ [a]) v) /\ tableAt2 (u2 ++ [a]) v) (a:v)) candidates (alph t) (cols t)
+        tableAt2 s e = singleton True `eq` tableAt t s e
 
 constructHypothesisBollig :: NominalType i => Set (BRow i) -> BTable i -> Automaton (BRow i) i
-constructHypothesisBollig primesUpp t@Table{..} = automaton q alph d i f
+constructHypothesisBollig primesUpp t = automaton q (alph t) d i f
     where
         q = primesUpp
-        i = filter (`isSubsetOf` brow t []) q
+        i = filter (`isSubsetOf` rowEps t) q
         f = filter (`contains` []) q
         -- TODO: compute indices of primesUpp only once
-        d0 = triplesWithFilter (\s a bs2 -> maybeIf (bs2 `isSubsetOf` brow t (s ++ [a])) (brow t s, a, bs2)) rows alph q
+        d0 = triplesWithFilter (\s a bs2 -> maybeIf (bs2 `isSubsetOf` row t (s ++ [a])) (row t s, a, bs2)) (rows t) (alph t) q
         d = filter (\(q1, _, _) -> q1 `member` q) d0
 
 -- Adds all suffixes as columns
 -- TODO: do actual Rivest and Schapire
 addCounterExample :: NominalType i => MQ i Bool -> Set [i] -> BTable i -> BTable i
-addCounterExample mq ces t@Table{..} =
+addCounterExample mq ces t =
     let newColumns = sum . map (fromList . tails) $ ces
-        newColumnsRed = newColumns \\ columns
+        newColumnsRed = newColumns \\ cols t
      in addColumns mq newColumnsRed t
 
 learnBollig :: (NominalType i, _) => Int -> Int -> Teacher i -> Automaton (BRow i) i
-learnBollig k n teacher = learnBolligLoop teacher (initialTableSize (mqToBool teacher) (alphabet teacher) k n)
+learnBollig k n teacher = learnBolligLoop teacher (initialBTableSize (mqToBool teacher) (alphabet teacher) k n)
 
 learnBolligLoop :: (NominalType i, _) => Teacher i -> BTable i -> Automaton (BRow i) i
-learnBolligLoop teacher t@Table{..} =
+learnBolligLoop teacher t =
     let
         -- These simplify's do speed up
-        allRowsUpp = simplify $ map (brow t) rows
-        allRows = simplify $ allRowsUpp `union` map (brow t) (rowsExt t)
+        allRowsUpp = simplify $ map (row t) (rows t)
+        allRows = simplify $ allRowsUpp `union` map (row t) (rowsExt t)
         primesUpp = simplify $ filter (\r -> isNotEmpty r /\ r `neq` sum (filter (`isSubsetOf` r) (allRows \\ orbit [] r))) allRowsUpp
 
         -- No worry, these are computed lazily

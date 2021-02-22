@@ -11,9 +11,7 @@ common stuff
   ghc-options:       -O2 -Wall
   build-depends:
     base >= 4.8 && < 5,
-    containers,
     haskeline,
-    mtl,
     NLambda >= 1.1
 
 library
@@ -32,6 +30,7 @@ library
     Examples.RunningExample,
     Examples.Stack,
     ObservationTable,
+    ObservationTableClass,
     SimpleObservationTable,
     Teacher,
     Teachers.Teacher,

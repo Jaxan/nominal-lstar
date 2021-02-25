@@ -67,9 +67,8 @@ instance (NominalType i, NominalType o) => ObservationTable (Table i o) i o wher
             newContent = mq newPartRed
 
 
--- I could make a more specific implementation for booleans.
--- But for now we reuse the above, and do minor optimisations
-
+-- We can reuse the above tables for the Boolean case and
+-- perform some minor optimisations.
 newtype Boolean table = B { unB :: table }
     deriving (Show, Ord, Eq, Generic, NominalType, Conditional, Contextual)
 
@@ -78,28 +77,22 @@ type BTable i = Boolean (Table i Bool)
 instance (NominalType i) => ObservationTable (BTable i) i Bool where
     -- Special case of a boolean: functions to Booleans are subsets
     type Row (BTable i) = Set [i]
+
+    -- All the reusable functions are simply coerced
     rows = coerce (rows :: _ => Table i Bool -> _)
     cols = coerce (cols :: _ => Table i Bool -> _)
     rowsExt = coerce (rowsExt :: _ => Table i Bool -> _)
     colsExt = coerce (colsExt :: _ => Table i Bool -> _)
     alph = coerce (alph :: _ => Table i Bool -> _)
     tableAt = coerce (tableAt :: _ => Table i Bool -> _)
-    --rows = rowIndices . unB
-    --cols = colIndices . unB
-    --alph = aa . unB
-    --tableAt = tableAt . unB
+    addRows = coerce (addRows :: _ => _ -> _ -> Table i Bool -> Table i Bool)
+    addColumns = coerce (addColumns :: _ => _ -> _ -> Table i Bool -> Table i Bool)
 
-    -- TODO: slightly inefficient
+    -- These are specific to our representation of Row
     row (B Table{..}) r = let lang = mapFilter (\(i, o) -> maybeIf (fromBool o) i) content
                           in filter (\a -> lang `contains` (r ++ a)) colIndices
     rowEps (B Table{..}) = mapFilter (\(i, o) -> maybeIf (fromBool o /\ i `member` colIndices) i) content
 
-    --addRows mq newRows = B . addRows mq newRows . unB
-    addRows = coerce (addRows :: _ => _ -> _ -> Table i Bool -> Table i Bool)
-    --addColumns mq newColumns = B . addColumns mq newColumns . unB
-    addColumns = coerce (addColumns :: _ => _ -> _ -> Table i Bool -> Table i Bool)
-
-type BRow i = Row (BTable i)
 
 initialTableWith :: (NominalType i, NominalType o) => MQ i o -> Set i -> Set (RowIndex i) -> Set (ColumnIndex i) -> Table i o
 initialTableWith mq alphabet newRows newColumns = Table

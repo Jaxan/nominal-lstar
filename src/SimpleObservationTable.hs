@@ -1,22 +1,21 @@
 {-# language DeriveAnyClass #-}
 {-# language DeriveGeneric #-}
-{-# language RecordWildCards #-}
 {-# language FlexibleInstances #-}
 {-# language MultiParamTypeClasses #-}
-{-# language TypeFamilies #-}
 {-# language PartialTypeSignatures #-}
+{-# language RecordWildCards #-}
+{-# language TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 module SimpleObservationTable where
 
 import ObservationTableClass
 
-import NLambda hiding (fromJust)
-
-import GHC.Generics (Generic)
-import Prelude (Bool (..), Eq, Int, Ord, Show (..), fst, (++), (.))
-import qualified Prelude ()
 import Data.Coerce (coerce)
+import GHC.Generics (Generic)
+import NLambda
+import Prelude (Bool (..), Eq, Int, Ord, Show (..), fst, (++))
+import qualified Prelude ()
 
 
 -- We represent functions as their graphs
@@ -30,10 +29,10 @@ dom = map fst
 -- Invariant: content is always defined for elements in
 -- `rows * columns` and `rows * alph * columns`.
 data Table i o = Table
-    { content :: Fun [i] o
+    { content    :: Fun [i] o
     , rowIndices :: Set (RowIndex i)
     , colIndices :: Set (ColumnIndex i)
-    , aa    :: Set i
+    , aa         :: Set i
     }
     deriving (Show, Ord, Eq, Generic, NominalType, Conditional, Contextual)
 
@@ -94,7 +93,7 @@ instance (NominalType i) => ObservationTable (BTable i) i Bool where
     row (B Table{..}) r = let lang = mapFilter (\(i, o) -> maybeIf (fromBool o) i) content
                           in filter (\a -> lang `contains` (r ++ a)) colIndices
     rowEps (B Table{..}) = mapFilter (\(i, o) -> maybeIf (fromBool o /\ i `member` colIndices) i) content
-    
+
     --addRows mq newRows = B . addRows mq newRows . unB
     addRows = coerce (addRows :: _ => _ -> _ -> Table i Bool -> Table i Bool)
     --addColumns mq newColumns = B . addColumns mq newColumns . unB

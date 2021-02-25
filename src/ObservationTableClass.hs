@@ -1,9 +1,9 @@
-{-# language TypeFamilies #-}
 {-# language FunctionalDependencies #-}
+{-# language TypeFamilies #-}
 
 module ObservationTableClass where
 
-import NLambda
+import NLambda (NominalType, Set, pairsWith)
 import Prelude ((++))
 
 -- Words are indices to our table
@@ -23,7 +23,7 @@ class (NominalType table, NominalType i, NominalType o) => ObservationTable tabl
   cols :: table -> Set (ColumnIndex i)
   alph :: table -> Set i
   row :: table -> RowIndex i -> Row table
-  
+
   -- perhaps not needed
   tableAt :: table -> RowIndex i -> ColumnIndex i -> Set o
 

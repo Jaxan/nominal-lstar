@@ -21,6 +21,7 @@ library
     AbstractLStar,
     Angluin,
     Bollig,
+    BooleanObservationTable,
     Examples,
     Examples.Contrived,
     Examples.ContrivedNFAs,

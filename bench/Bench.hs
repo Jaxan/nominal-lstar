@@ -24,6 +24,7 @@ import NLambda
    Examples.example4 is not used, because it takes a bit too long.
 -}
 
+myConfig :: Config
 myConfig = defaultConfig
   { quickMode = True
   , includeFirstIter = True
@@ -36,6 +37,7 @@ stackBound = 4
 doublewordBound = 3
 nlastpositionBound = 4
 
+main :: IO ()
 main = defaultMainWith myConfig
   [ bgroup "NomLStarR"
     [ bgroup "Fifo" $

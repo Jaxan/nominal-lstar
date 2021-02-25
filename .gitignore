@@ -4,5 +4,7 @@ dist/
 *.hi
 *.prof
 *.code-workspace
+.stack-work
+.vscode
 bench.csv
 

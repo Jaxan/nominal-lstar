@@ -3,6 +3,7 @@
 
 module Teacher
     ( module Teachers.Teacher
+    , mqToBool
     , teacherWithTarget
     , teacherWithTargetNonDet
     , teacherWithIO
@@ -16,6 +17,20 @@ import Teachers.Whitebox
 
 import NLambda hiding (alphabet)
 import qualified NLambda (alphabet)
+import Prelude hiding (map)
+
+
+-- The teacher interface is slightly inconvenient
+-- But this is for a good reason. The type [i] -> o
+-- doesn't work well in nlambda
+mqToBool :: NominalType i => Teacher i -> Set [i] -> Set ([i], Bool)
+mqToBool teacher qs = answer
+    where
+        realQ = membership teacher qs
+        (inw, outw) = partition snd realQ
+        answer = map (setB True) inw `union` map (setB False) outw
+        setB b (w, _) = (w, b)
+
 
 -- We provide three ways to construct teachers:
 -- 1. Fully automatic

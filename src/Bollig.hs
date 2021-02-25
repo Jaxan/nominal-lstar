@@ -13,7 +13,7 @@ import Teacher
 import Data.List (tails)
 import Debug.Trace (trace, traceShow)
 import NLambda hiding (alphabet)
-import Prelude (Bool (..), Int, Maybe (..), Show (..), snd, ($), (++), (.))
+import Prelude (Bool (..), Int, Maybe (..), Show (..), ($), (++), (.))
 
 -- Comparing two graphs of a function is inefficient in NLambda,
 -- because we do not have a map data structure. (So the only way
@@ -22,17 +22,6 @@ import Prelude (Bool (..), Int, Maybe (..), Show (..), snd, ($), (++), (.))
 -- as a subset.
 -- This does hinder generalisations to other nominal join semi-
 -- lattices than the Booleans.
-
--- The teacher interface is slightly inconvenient
--- But this is for a good reason. The type [i] -> o
--- doesn't work well in nlambda
-mqToBool :: NominalType i => Teacher i -> MQ i Bool
-mqToBool teacher words = answer
-    where
-        realQ = membership teacher words
-        (inw, outw) = partition snd realQ
-        answer = map (setB True) inw `union` map (setB False) outw
-        setB b (w, _) = (w, b)
 
 rfsaClosednessTest :: (NominalType i, _) => Set (Row table) -> table -> TestResult i
 rfsaClosednessTest primesUpp t = case solve (isEmpty defect) of
@@ -72,12 +61,12 @@ addCounterExample mq ces t =
         newColumnsRed = newColumns \\ cols t
      in addColumns mq newColumnsRed t
 
--- Slow version
-learnBolligOld :: (NominalType i, _) => Int -> Int -> Teacher i -> Automaton (Row (SOT.BTable i)) i
-learnBolligOld k n teacher = learnBolligLoop teacher (SOT.initialBTableSize (mqToBool teacher) (alphabet teacher) k n)
-
-learnBollig :: (NominalType i, _) => Int -> Int -> Teacher i -> Automaton (Row (BOT.Table i)) i
+learnBollig :: (NominalType i, _) => Int -> Int -> Teacher i -> Automaton _ i
 learnBollig k n teacher = learnBolligLoop teacher (BOT.initialBTableSize (mqToBool teacher) (alphabet teacher) k n)
+
+-- Slow version
+learnBolligOld :: (NominalType i, _) => Int -> Int -> Teacher i -> Automaton _ i
+learnBolligOld k n teacher = learnBolligLoop teacher (SOT.initialBTableSize (mqToBool teacher) (alphabet teacher) k n)
 
 learnBolligLoop :: (NominalType i, _) => Teacher i -> table -> Automaton (Row table) i
 learnBolligLoop teacher t =

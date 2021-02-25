@@ -2,7 +2,6 @@
 import Angluin
 import Bollig
 import Examples
-import ObservationTable (LearnableAlphabet)
 import Teacher
 
 import NLambda hiding (automaton)
@@ -25,7 +24,7 @@ data Aut = Fifo Int | Stack Int | Running Int | NFA1 | Bollig Int | NonResidual 
   deriving (Show, Read)
 
 -- existential wrapper
-data A = forall q i . (LearnableAlphabet i, Read i, NominalType q, Show q) => A (Automaton q i)
+data A = forall q i . (NominalType i, Contextual i, Show i, Read i, NominalType q, Show q) => A (Automaton q i)
 
 {- HLINT ignore "Redundant $" -}
 mainExample :: String -> String -> String -> IO ()

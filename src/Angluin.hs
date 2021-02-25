@@ -1,112 +1,107 @@
-{-# language RecordWildCards #-}
+{-# language FlexibleContexts #-}
+{-# language PartialTypeSignatures #-}
+{-# language TypeFamilies #-}
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 module Angluin where
 
 import AbstractLStar
-import ObservationTable
+import ObservationTableClass
+import qualified BooleanObservationTable as OT
 import Teacher
 
 import Data.List (inits, tails)
 import Debug.Trace
-import NLambda
-import Prelude (Bool (..), Maybe (..), id, show, ($), (++), (.))
+import NLambda hiding (alphabet)
+import Prelude (Bool (..), Maybe (..), error, show, ($), (++), (.))
 
--- This was actually a pessimisation (often), also it sometimes crashes.
--- So I changed it to a no-op.
-justOne :: (Contextual a, NominalType a) => Set a -> Set a
-justOne = id -- mapFilter id . orbit [] . element
 
--- We can determine its completeness with the following
--- It returns all witnesses (of the form sa) for incompleteness
-closednessTest :: LearnableAlphabet i => State i -> TestResult i
-closednessTest State{..} = case solve (isEmpty defect) of
+-- This returns all witnesses (of the form sa) for non-closedness
+closednessTest :: (NominalType i, _) => table -> TestResult i
+closednessTest t = case solve (isEmpty defect) of
     Just True  -> Succes
-    Just False -> trace "Not closed" $ Failed (justOne defect) empty
+    Just False -> trace "Not closed" $ Failed defect empty
+    Nothing    -> let err = error "@@@ Unsolvable (closednessTest) @@@" in Failed err err
     where
-        sss = map (row t) ss                 -- all the rows
-        hasEqRow = contains sss . row t      -- has equivalent upper row
-        defect = filter (not . hasEqRow) ssa -- all rows without equivalent guy
+        allRows = map (row t) (rows t)
+        hasEqRow = contains allRows . row t
+        defect = filter (not . hasEqRow) (rowsExt t)
 
 -- We look for inconsistencies and return columns witnessing it
-consistencyTestDirect :: LearnableAlphabet i => State i -> TestResult i
-consistencyTestDirect State{..} = case solve (isEmpty defect) of
+consistencyTestDirect :: (NominalType i, _) => table -> TestResult i
+consistencyTestDirect t = case solve (isEmpty defect) of
     Just True  -> Succes
-    Just False -> trace "Not consistent" $ Failed empty (justOne defect)
+    Just False -> trace "Not consistent" $ Failed empty defect
+    Nothing    -> let err = error "@@@ Unsolvable (consistencyTestDirect) @@@" in Failed err err
     where
-        ssRows = map (\u -> (u, row t u)) ss
+        ssRows = map (\u -> (u, row t u)) (rows t)
         candidates = pairsWithFilter (\(u1,r1) (u2,r2) -> maybeIf (u1 `neq` u2 /\ r1 `eq` r2) (u1, u2)) ssRows ssRows
-        defect = triplesWithFilter (\(u1, u2) a v -> maybeIf (tableAt t (u1 ++ [a]) v `diff` tableAt t (u2 ++ [a]) v) (a:v)) candidates aa ee
-        diff a b = not (a `iff` b)
-
+        defect = triplesWithFilter (\(u1, u2) a v -> maybeIf (tableAt t (u1 ++ [a]) v `neq` tableAt t (u2 ++ [a]) v) (a:v)) candidates (alph t) (cols t)
 
 -- Given a C&C table, constructs an automaton. The states are given by 2^E (not
 -- necessarily equivariant functions)
-constructHypothesis :: LearnableAlphabet i => State i -> Automaton (BRow i) i
-constructHypothesis State{..} = simplify $ automaton q aa d i f
+constructHypothesis :: (NominalType i, _) => table -> Automaton (Row table) i
+constructHypothesis t = simplify $ automaton q (alph t) d i f
     where
-        q = map (row t) ss
-        d = pairsWith (\s a -> (row t s, a, rowa t s a)) ss aa
-        i = singleton $ row t []
-        f = mapFilter (\s -> maybeIf (toform $ apply t (s, [])) (row t s)) ss
-        toform = forAll id . map fromBool
+        q = map (row t) (rows t)
+        d = pairsWith (\s a -> (row t s, a, row t (s ++ [a]))) (rows t) (alph t)
+        i = singleton (rowEps t)
+        f = filter (`contains` []) q
 
 -- Extends the table with all prefixes of a set of counter examples.
-useCounterExampleAngluin :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> State i
-useCounterExampleAngluin teacher state@State{..} ces =
-    trace ("Using ce: " ++ show ces) $
-    let ds = sum . map (fromList . inits) $ ces in
-    addRows teacher ds state
+useCounterExampleAngluin :: (NominalType i, _) => Teacher i -> Set [i] -> table -> table
+useCounterExampleAngluin teacher ces t =
+    let newRows = sum . map (fromList . inits) $ ces
+        newRowsRed = newRows \\ rows t
+     in addRows (mqToBool teacher) newRowsRed t
 
--- This is the variant by Maler and Pnueli
-useCounterExampleMP :: LearnableAlphabet i => Teacher i -> State i -> Set [i] -> State i
-useCounterExampleMP teacher state@State{..} ces =
-    trace ("Using ce: " ++ show ces) $
-    let de = sum . map (fromList . tails) $ ces in
-    addColumns teacher de state
-
--- Putting the above together in a learning algorithm
-makeCompleteAngluin :: LearnableAlphabet i => TableCompletionHandler i
-makeCompleteAngluin = makeCompleteWith [closednessTest, consistencyTestDirect]
+-- This is the variant by Maler and Pnueli: Adds all suffixes as columns
+useCounterExampleMP :: (NominalType i, _) => Teacher i -> Set [i] -> table -> table
+useCounterExampleMP teacher ces t =
+    let newColumns = sum . map (fromList . tails) $ ces
+        newColumnsRed = newColumns \\ cols t
+     in addColumns (mqToBool teacher) newColumnsRed t
 
 -- Default: use counter examples in columns, which is slightly faster
-learnAngluin :: LearnableAlphabet i => Teacher i -> Automaton (BRow i) i
-learnAngluin teacher = learn makeCompleteAngluin useCounterExampleMP constructHypothesis teacher initial
-    where initial = constructEmptyState 0 0 teacher
+learnAngluin :: (NominalType i, _) => Teacher i -> Automaton _ i
+learnAngluin teacher = learnLoop useCounterExampleMP teacher (OT.initialBTable (mqToBool teacher) (alphabet teacher))
 
 -- The "classical" version, where counter examples are added as rows
-learnAngluinRows :: LearnableAlphabet i => Teacher i -> Automaton (BRow i) i
-learnAngluinRows teacher = learn makeCompleteAngluin useCounterExampleAngluin constructHypothesis teacher initial
-    where initial = constructEmptyState 0 0 teacher
+learnAngluinRows :: (NominalType i, _) => Teacher i -> Automaton _ i
+learnAngluinRows teacher = learnLoop useCounterExampleAngluin teacher (OT.initialBTable (mqToBool teacher) (alphabet teacher))
 
-
--- Below are some variations of the above functions with different
--- performance characteristics.
-
--- Some coauthor's slower version
-consistencyTest2 :: NominalType i => State i -> TestResult i
-consistencyTest2 State{..} = case solve (isEmpty defect) of
-    Just True  -> Succes
-    Just False -> trace "Not consistent" $ Failed empty columns
-    where
-        -- true for equal rows, but unequal extensions
-        -- we can safely skip equal sequences
-        candidate s1 s2 a = s1 `neq` s2
-                            /\ row t s1 `eq` row t s2
-                            /\ rowa t s1 a `neq` rowa t s2 a
-        defect = triplesWithFilter (
-                     \s1 s2 a -> maybeIf (candidate s1 s2 a) ((s1, s2, a), discrepancy (rowa t s1 a) (rowa t s2 a))
-                 ) ss ss aa
-        columns = sum $ map (\((_,_,a),es) -> map (a:) es) defect
-
--- Some coauthor's faster version
-consistencyTest3 :: NominalType i => State i -> TestResult i
-consistencyTest3 State{..} = case solve (isEmpty defect) of
-    Just True  -> Succes
-    Just False -> trace "Not consistent" $ Failed empty columns
-    where
-        rowPairs = pairsWithFilter (\s1 s2 -> maybeIf (candidate0 s1 s2) (s1,s2)) ss ss
-        candidate0 s1 s2 = s1 `neq` s2 /\ row t s1 `eq` row t s2
-        candidate1 s1 s2 a = rowa t s1 a `neq` rowa t s2 a
-        defect = pairsWithFilter (
-                     \(s1, s2) a -> maybeIf (candidate1 s1 s2 a) ((s1, s2, a), discrepancy (rowa t s1 a) (rowa t s2 a))
-                 ) rowPairs aa
-        columns = sum $ map (\((_,_,a),es) -> map (a:) es) defect
+learnLoop :: (NominalType i, ObservationTable table i Bool, _) => _ -> Teacher i -> table -> Automaton (Row table) i
+learnLoop cexHandler teacher t =
+    let
+        -- No worry, these are computed lazily
+        closednessRes = closednessTest t
+        consistencyRes = consistencyTestDirect t
+        hyp = constructHypothesis t
+    in
+        trace "1. Making it closed" $
+        case closednessRes of
+            Failed newRows _ ->
+                let state2 = addRows (mqToBool teacher) newRows t in
+                trace ("newrows = " ++ show newRows) $
+                learnLoop cexHandler teacher state2
+            Succes ->
+                trace "2. Making it consistent" $
+                case consistencyRes of
+                    Failed _ newColumns ->
+                        let state2 = addColumns (mqToBool teacher) newColumns t in
+                        trace ("newcols = " ++ show newColumns) $
+                        learnLoop cexHandler teacher state2
+                    Succes ->
+                        traceShow hyp $
+                        trace "3. Equivalent? " $
+                        eqloop t hyp
+                        where
+                            eqloop s2 h = case equivalent teacher h of
+                                            Nothing -> trace "Yes" h
+                                            Just ces -> trace "No" $
+                                                if isTrue . isEmpty $ realces h ces
+                                                    then eqloop s2 h
+                                                    else
+                                                        let s3 = cexHandler teacher ces s2 in
+                                                        trace ("Using ce: " ++ show ces) $
+                                                        learnLoop cexHandler teacher s3
+                            realces h ces = NLambda.filter (\(ce, a) -> a `neq` accepts h ce) $ membership teacher ces

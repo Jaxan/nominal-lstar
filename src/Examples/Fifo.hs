@@ -14,7 +14,7 @@ import qualified Prelude ()
 -- second list is to pop. If the second list is empty, it will reverse
 -- the first.
 data Fifo a = Fifo [a] [a]
-  deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
+  deriving (Eq, Ord, Show, Generic, Nominal, Contextual)
 
 push :: a -> Fifo a -> Fifo a
 push x (Fifo l1 l2) = Fifo (x:l1) l2
@@ -38,7 +38,7 @@ sizeFifo (Fifo l1 l2) = length l1 + length l2
 
 -- The alphabet:
 data DataInput = Put Atom | Get Atom
-  deriving (Eq, Ord, Show, Read, Generic, NominalType, Contextual)
+  deriving (Eq, Ord, Show, Read, Generic, Nominal, Contextual)
 
 -- The automaton: States consist of fifo queues and a sink state.
 -- This representation is not minimal at all, but that's OK, since the

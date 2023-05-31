@@ -13,7 +13,7 @@ import Prelude (Eq, Ord, Read, Show)
 import qualified Prelude ()
 
 data Res1 a = QR1 a | QR2 | QEmpty
-  deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
+  deriving (Eq, Ord, Show, Generic, Nominal, Contextual)
 
 -- Language L = { w a | a fresh for w } + {eps}, but anchored with a new symbol
 exampleResidual1 :: Automaton (Res1 Atom) DataInput
@@ -35,10 +35,10 @@ exampleResidual1 = automaton
 
 -- Example when learning breaks
 data Res2 a = Guess a | GuessConfused a | Accept
-  deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
+  deriving (Eq, Ord, Show, Generic, Nominal, Contextual)
 
 data AlphabetR a = A a | Anc a
-  deriving (Eq, Ord, Show, Read, Generic, NominalType, Contextual)
+  deriving (Eq, Ord, Show, Read, Generic, Nominal, Contextual)
 
 exampleResidual2 :: Automaton (Res2 Atom) (AlphabetR Atom)
 exampleResidual2 = automaton

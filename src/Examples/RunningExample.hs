@@ -18,9 +18,9 @@ import qualified Prelude ()
 
 
 data RunningExample a = Store [a] | Check [a] | Accept | Reject
-  deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
+  deriving (Eq, Ord, Show, Generic, Nominal, Contextual)
 
-runningExample :: NominalType a => Set a -> Int -> Automaton (RunningExample a) a
+runningExample :: Nominal a => Set a -> Int -> Automaton (RunningExample a) a
 runningExample alphabet 0 = automaton
     (fromList [Accept, Reject])
     alphabet

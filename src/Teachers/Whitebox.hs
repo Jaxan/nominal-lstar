@@ -8,7 +8,7 @@ import Prelude hiding (filter, map, not, sum)
 -- Checks bisimulation of initial states (only for DFAs)
 -- returns some counterexamples if not bisimilar
 -- returns empty set iff bisimilar
-bisim :: (NominalType i, NominalType q1, NominalType q2) => Automaton q1 i -> Automaton q2 i -> Set [i]
+bisim :: (Nominal i, Nominal q1, Nominal q2) => Automaton q1 i -> Automaton q2 i -> Set [i]
 bisim aut1 aut2 = go empty (pairsWith addEmptyWord (initialStates aut1) (initialStates aut2))
     where
         go rel todo =
@@ -37,7 +37,7 @@ bisim aut1 aut2 = go empty (pairsWith addEmptyWord (initialStates aut1) (initial
 -- I am not sure about correctness, but that is not really an issue for our
 -- use-case. Note that deciding equivalence of NFAs is undecidable, so we
 -- bound the bisimulation depth.
-bisimNonDet :: (Show i, Show q1, Show q2, NominalType i, NominalType q1, NominalType q2) => Int -> Automaton q1 i -> Automaton q2 i -> Set [i]
+bisimNonDet :: (Show i, Show q1, Show q2, Nominal i, Nominal q1, Nominal q2) => Int -> Automaton q1 i -> Automaton q2 i -> Set [i]
 bisimNonDet n aut1 aut2 = go empty (singleton ([], initialStates aut1, initialStates aut2))
     where
         go rel todo0 =

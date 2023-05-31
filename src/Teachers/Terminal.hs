@@ -9,7 +9,7 @@ import System.IO.Unsafe (unsafePerformIO)
 import Text.Read (readMaybe)
 
 -- Posing a membership query to the terminal and waits for used to input a formula
-ioMembership :: (Show i, NominalType i, Contextual i) => Set [i] -> Set ([i], Formula)
+ioMembership :: (Show i, Nominal i, Contextual i) => Set [i] -> Set ([i], Formula)
 ioMembership queries = unsafePerformIO $ do
     cache <- readIORef mqCache
     let cachedAnswers = filter (\(a, _) -> a `member` queries) cache
@@ -41,7 +41,7 @@ ioMembership queries = unsafePerformIO $ do
 
 
 -- Same as above, but with a machine-readable format
-ioMembership2 :: (Show i, NominalType i, Contextual i) => Set [i] -> Set ([i], Formula)
+ioMembership2 :: (Show i, Nominal i, Contextual i) => Set [i] -> Set ([i], Formula)
 ioMembership2 queries = unsafePerformIO $ do
     cache <- readIORef mqCache
     let cachedAnswers = filter (\(a, _) -> a `member` queries) cache
@@ -73,7 +73,7 @@ newtype TestIO i = T [i]
 
 -- Poses a query to the terminal, waiting for the user to provide a counter example
 -- User can pose a "test query" which is evaluated on the hypothesis
-ioEquivalent :: (Show q, NominalType q, Show i, Read i, NominalType i) => Automaton q i -> Maybe (Set [i])
+ioEquivalent :: (Show q, Nominal q, Show i, Read i, Nominal i) => Automaton q i -> Maybe (Set [i])
 ioEquivalent hypothesis = unsafePerformIO $ do
     putStrLn "\n# Is the following automaton correct?"
     putStr "# "
@@ -102,7 +102,7 @@ ioEquivalent hypothesis = unsafePerformIO $ do
 
 -- Same as above but in different format.
 -- This is used for automation and benchmarking different nominal tools
-ioEquivalent2 :: (Show q, NominalType q, Show i, Read i, NominalType i) => Automaton q i -> Maybe (Set [i])
+ioEquivalent2 :: (Show q, Nominal q, Show i, Read i, Nominal i) => Automaton q i -> Maybe (Set [i])
 ioEquivalent2 hypothesis = unsafePerformIO $ do
     putStrLn "EQ\n\"Is the following automaton correct?"
     print hypothesis

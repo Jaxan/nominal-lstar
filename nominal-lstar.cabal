@@ -2,7 +2,7 @@ cabal-version:       2.2
 name:                nominal-lstar
 version:             0.1.0.0
 author:              Joshua Moerman
-copyright:           (c) 2016 - 2020, Joshua Moerman
+copyright:           (c) 2016 - 2023, Joshua Moerman
 build-type:          Simple
 extra-source-files:  README.md
 
@@ -10,7 +10,8 @@ common stuff
   default-language:  Haskell2010
   ghc-options:       -O2 -Wall
   build-depends:
-    base >= 4.8 && < 5,
+    -- at most 4.17: one transitive dependency breaks with more recent base
+    base >= 4.8 && < 4.17,
     haskeline,
     NLambda >= 1.1
 

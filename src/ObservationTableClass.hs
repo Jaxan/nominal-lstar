@@ -3,7 +3,8 @@
 
 module ObservationTableClass where
 
-import NLambda (NominalType, Set, pairsWith)
+import Data.Kind (Type)
+import NLambda (Nominal, Set, pairsWith)
 import Prelude ((++))
 
 -- Words are indices to our table
@@ -14,9 +15,9 @@ type ColumnIndex i = [i]
 type MQ i o = Set [i] -> Set ([i], o)
 
 -- This is a fat class, so that instances could give more efficient implementations
-class (NominalType table, NominalType i, NominalType o) => ObservationTable table i o | table -> i o where
+class (Nominal table, Nominal i, Nominal o) => ObservationTable table i o | table -> i o where
   -- The type of data in a row is determined by the table
-  type Row table :: *
+  type Row table :: Type
 
   -- getters
   rows :: table -> Set (RowIndex i)

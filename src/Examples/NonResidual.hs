@@ -18,7 +18,7 @@ import qualified Prelude ()
 
 -- Parametric in the alphabet, because why not?
 data NonResidual a = Q1 | Q2 a | Q3 a a | Q4 a | Q5
-  deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
+  deriving (Eq, Ord, Show, Generic, Nominal, Contextual)
 
 exampleNonResidual :: Automaton (NonResidual Atom) Atom
 exampleNonResidual = automaton

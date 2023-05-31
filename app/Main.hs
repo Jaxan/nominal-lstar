@@ -24,7 +24,7 @@ data Aut = Fifo Int | Stack Int | Running Int | NFA1 | Bollig Int | NonResidual 
   deriving (Show, Read)
 
 -- existential wrapper
-data A = forall q i . (NominalType i, Contextual i, Show i, Read i, NominalType q, Show q) => A (Automaton q i)
+data A = forall q i . (Nominal i, Contextual i, Show i, Read i, Nominal q, Show q) => A (Automaton q i)
 
 {- HLINT ignore "Redundant $" -}
 mainExample :: String -> String -> String -> IO ()

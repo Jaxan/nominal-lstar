@@ -14,7 +14,7 @@ import qualified Prelude ()
 -- The complement of 'all distinct atoms'
 -- Not determinizable
 data NFA1 = Initial1 | Guessed1 Atom | Final1
-  deriving (Show, Eq, Ord, Generic, NominalType, Contextual)
+  deriving (Show, Eq, Ord, Generic, Nominal, Contextual)
 
 exampleNFA1 :: Automaton NFA1 Atom
 exampleNFA1 = automaton
@@ -43,7 +43,7 @@ exampleNFA1 = automaton
 -- So this one *is* determinizable.
 -- Also used in the Bollig et al paper.
 data NFA2 = Initial2 | Distinguished Atom | Count Int
-  deriving (Show, Eq, Ord, Generic, NominalType, Contextual)
+  deriving (Show, Eq, Ord, Generic, Nominal, Contextual)
 
 exampleNFA2 :: Int -> Automaton NFA2 Atom
 exampleNFA2 n = automaton

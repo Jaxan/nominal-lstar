@@ -16,7 +16,7 @@ import Prelude (Bool (..), Maybe (..), error, show, ($), (++), (.))
 
 
 -- This returns all witnesses (of the form sa) for non-closedness
-closednessTest :: (NominalType i, _) => table -> TestResult i
+closednessTest :: (Nominal i, _) => table -> TestResult i
 closednessTest t = case solve (isEmpty defect) of
     Just True  -> Succes
     Just False -> trace "Not closed" $ Failed defect empty
@@ -27,7 +27,7 @@ closednessTest t = case solve (isEmpty defect) of
         defect = filter (not . hasEqRow) (rowsExt t)
 
 -- We look for inconsistencies and return columns witnessing it
-consistencyTestDirect :: (NominalType i, _) => table -> TestResult i
+consistencyTestDirect :: (Nominal i, _) => table -> TestResult i
 consistencyTestDirect t = case solve (isEmpty defect) of
     Just True  -> Succes
     Just False -> trace "Not consistent" $ Failed empty defect
@@ -39,7 +39,7 @@ consistencyTestDirect t = case solve (isEmpty defect) of
 
 -- Given a C&C table, constructs an automaton. The states are given by 2^E (not
 -- necessarily equivariant functions)
-constructHypothesis :: (NominalType i, _) => table -> Automaton (Row table) i
+constructHypothesis :: (Nominal i, _) => table -> Automaton (Row table) i
 constructHypothesis t = simplify $ automaton q (alph t) d i f
     where
         q = map (row t) (rows t)
@@ -48,28 +48,28 @@ constructHypothesis t = simplify $ automaton q (alph t) d i f
         f = filter (`contains` []) q
 
 -- Extends the table with all prefixes of a set of counter examples.
-useCounterExampleAngluin :: (NominalType i, _) => Teacher i -> Set [i] -> table -> table
+useCounterExampleAngluin :: (Nominal i, _) => Teacher i -> Set [i] -> table -> table
 useCounterExampleAngluin teacher ces t =
     let newRows = sum . map (fromList . inits) $ ces
         newRowsRed = newRows \\ rows t
      in addRows (mqToBool teacher) newRowsRed t
 
 -- This is the variant by Maler and Pnueli: Adds all suffixes as columns
-useCounterExampleMP :: (NominalType i, _) => Teacher i -> Set [i] -> table -> table
+useCounterExampleMP :: (Nominal i, _) => Teacher i -> Set [i] -> table -> table
 useCounterExampleMP teacher ces t =
     let newColumns = sum . map (fromList . tails) $ ces
         newColumnsRed = newColumns \\ cols t
      in addColumns (mqToBool teacher) newColumnsRed t
 
 -- Default: use counter examples in columns, which is slightly faster
-learnAngluin :: (NominalType i, _) => Teacher i -> Automaton _ i
+learnAngluin :: (Nominal i, _) => Teacher i -> Automaton _ i
 learnAngluin teacher = learnLoop useCounterExampleMP teacher (OT.initialBTable (mqToBool teacher) (alphabet teacher))
 
 -- The "classical" version, where counter examples are added as rows
-learnAngluinRows :: (NominalType i, _) => Teacher i -> Automaton _ i
+learnAngluinRows :: (Nominal i, _) => Teacher i -> Automaton _ i
 learnAngluinRows teacher = learnLoop useCounterExampleAngluin teacher (OT.initialBTable (mqToBool teacher) (alphabet teacher))
 
-learnLoop :: (NominalType i, ObservationTable table i Bool, _) => _ -> Teacher i -> table -> Automaton (Row table) i
+learnLoop :: (Nominal i, ObservationTable table i Bool, _) => _ -> Teacher i -> table -> Automaton (Row table) i
 learnLoop cexHandler teacher t =
     let
         -- No worry, these are computed lazily

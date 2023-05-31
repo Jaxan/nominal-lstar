@@ -22,7 +22,7 @@ import qualified Prelude ()
 -- Except when o = Bool, more on that later
 type Fun i o = Set (i, o)
 
-dom :: (NominalType i, NominalType o) => Fun i o -> Set i
+dom :: (Nominal i, Nominal o) => Fun i o -> Set i
 dom = map fst
 
 -- A table is nothing more than a part of the language.
@@ -34,9 +34,9 @@ data Table i o = Table
     , colIndices :: Set (ColumnIndex i)
     , aa         :: Set i
     }
-    deriving (Show, Ord, Eq, Generic, NominalType, Conditional, Contextual)
+    deriving (Show, Ord, Eq, Generic, Nominal, Conditional, Contextual)
 
-instance (NominalType i, NominalType o) => ObservationTable (Table i o) i o where
+instance (Nominal i, Nominal o) => ObservationTable (Table i o) i o where
     type Row (Table i o) = Fun [i] o
     rows = rowIndices
     cols = colIndices
@@ -70,11 +70,11 @@ instance (NominalType i, NominalType o) => ObservationTable (Table i o) i o wher
 -- We can reuse the above tables for the Boolean case and
 -- perform some minor optimisations.
 newtype Boolean table = B { unB :: table }
-    deriving (Show, Ord, Eq, Generic, NominalType, Conditional, Contextual)
+    deriving (Show, Ord, Eq, Generic, Nominal, Conditional, Contextual)
 
 type BTable i = Boolean (Table i Bool)
 
-instance (NominalType i) => ObservationTable (BTable i) i Bool where
+instance (Nominal i) => ObservationTable (BTable i) i Bool where
     -- Special case of a boolean: functions to Booleans are subsets
     type Row (BTable i) = Set [i]
 
@@ -94,7 +94,7 @@ instance (NominalType i) => ObservationTable (BTable i) i Bool where
     rowEps (B Table{..}) = mapFilter (\(i, o) -> maybeIf (fromBool o /\ i `member` colIndices) i) content
 
 
-initialTableWith :: (NominalType i, NominalType o) => MQ i o -> Set i -> Set (RowIndex i) -> Set (ColumnIndex i) -> Table i o
+initialTableWith :: (Nominal i, Nominal o) => MQ i o -> Set i -> Set (RowIndex i) -> Set (ColumnIndex i) -> Table i o
 initialTableWith mq alphabet newRows newColumns = Table
     { content = content
     , rowIndices = newRows
@@ -106,17 +106,17 @@ initialTableWith mq alphabet newRows newColumns = Table
         domain = pairsWith (++) newRows (newColumns `union` newColumnsExt)
         content = mq domain
 
-initialTable :: (NominalType i, NominalType o) => MQ i o -> Set i -> Table i o
+initialTable :: (Nominal i, Nominal o) => MQ i o -> Set i -> Table i o
 initialTable mq alphabet = initialTableWith mq alphabet (singleton []) (singleton [])
 
-initialTableSize :: (NominalType i, NominalType o) => MQ i o -> Set i -> Int -> Int -> Table i o
+initialTableSize :: (Nominal i, Nominal o) => MQ i o -> Set i -> Int -> Int -> Table i o
 initialTableSize mq alphabet rs cs = initialTableWith mq alphabet (replicateSetUntil rs alphabet) (replicateSetUntil cs alphabet)
 
-initialBTableWith :: NominalType i => MQ i Bool -> Set i -> Set (RowIndex i) -> Set (ColumnIndex i) -> BTable i
+initialBTableWith :: Nominal i => MQ i Bool -> Set i -> Set (RowIndex i) -> Set (ColumnIndex i) -> BTable i
 initialBTableWith = coerce initialTableWith
 
-initialBTable :: NominalType i => MQ i Bool -> Set i -> BTable i
+initialBTable :: Nominal i => MQ i Bool -> Set i -> BTable i
 initialBTable = coerce initialTable
 
-initialBTableSize :: NominalType i => MQ i Bool -> Set i -> Int -> Int -> BTable i
+initialBTableSize :: Nominal i => MQ i Bool -> Set i -> Int -> Int -> BTable i
 initialBTableSize = coerce initialTableSize

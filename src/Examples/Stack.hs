@@ -12,7 +12,7 @@ import qualified Prelude ()
 
 -- Functional stack data type is simply a list.
 newtype Stack a = Stack [a]
-  deriving (Eq, Ord, Show, Generic, NominalType, Contextual)
+  deriving (Eq, Ord, Show, Generic, Nominal, Contextual)
 
 push :: a -> Stack a -> Stack a
 push x (Stack l1) = Stack (x:l1)

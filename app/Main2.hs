@@ -13,7 +13,7 @@ import System.IO
 data Learner = NomLStar | NomLStarCol | NomNLStar
   deriving (Show, Read)
 
-learn :: (Read i, Contextual i, NominalType i, Show i) => Set i -> IO ()
+learn :: (Read i, Contextual i, Nominal i, Show i) => Set i -> IO ()
 learn alphSet = do
     [learnerName] <- getArgs
     let t = teacherWithIO2 alphSet

@@ -17,12 +17,12 @@ data Teacher i = Teacher
     -- Given a hypothesis, returns Nothing when equivalence or a (equivariant)
     -- set of counter examples. Needs to be quantified over q, because the
     -- learner may choose the type of the state space.
-    , equivalent :: forall q. (Show q, NominalType q) => Automaton q i -> Maybe (Set [i])
+    , equivalent :: forall q. (Show q, Nominal q) => Automaton q i -> Maybe (Set [i])
     -- Returns the alphabet to the learner
     , alphabet   :: Set i
     }
 
 -- Often a membership query is defined by a function [i] -> Formula. This wraps
 -- such a function to the required type for a membership query (see above).
-foreachQuery :: NominalType i => ([i] -> Formula) -> Set[i] -> Set ([i], Formula)
+foreachQuery :: Nominal i => ([i] -> Formula) -> Set[i] -> Set ([i], Formula)
 foreachQuery f = map (\q -> (q, f q))

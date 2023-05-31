@@ -23,7 +23,7 @@ import Prelude (Bool (..), Int, Maybe (..), Show (..), ($), (++), (.))
 -- This does hinder generalisations to other nominal join semi-
 -- lattices than the Booleans.
 
-rfsaClosednessTest :: (NominalType i, _) => Set (Row table) -> table -> TestResult i
+rfsaClosednessTest :: (Nominal i, _) => Set (Row table) -> table -> TestResult i
 rfsaClosednessTest primesUpp t = case solve (isEmpty defect) of
     Just True  -> Succes
     Just False -> trace "Not closed" $ Failed defect empty
@@ -32,7 +32,7 @@ rfsaClosednessTest primesUpp t = case solve (isEmpty defect) of
     where
         defect = filter (\ua -> row t ua `neq` sum (filter (`isSubsetOf` row t ua) primesUpp)) (rowsExt t)
 
-rfsaConsistencyTest :: (NominalType i, _) => table -> TestResult i
+rfsaConsistencyTest :: (Nominal i, _) => table -> TestResult i
 rfsaConsistencyTest t = case solve (isEmpty defect) of
     Just True  -> Succes
     Just False -> trace "Not consistent" $ Failed empty defect
@@ -43,7 +43,7 @@ rfsaConsistencyTest t = case solve (isEmpty defect) of
         defect = triplesWithFilter (\(u1, u2) a v -> maybeIf (not (tableAt2 (u1 ++ [a]) v) /\ tableAt2 (u2 ++ [a]) v) (a:v)) candidates (alph t) (cols t)
         tableAt2 s e = singleton True `eq` tableAt t s e
 
-constructHypothesisBollig :: (NominalType i, _) => Set (Row table) -> table -> Automaton (Row table) i
+constructHypothesisBollig :: (Nominal i, _) => Set (Row table) -> table -> Automaton (Row table) i
 constructHypothesisBollig primesUpp t = automaton q (alph t) d i f
     where
         q = primesUpp
@@ -55,20 +55,20 @@ constructHypothesisBollig primesUpp t = automaton q (alph t) d i f
 
 -- Adds all suffixes as columns
 -- TODO: do actual Rivest and Schapire
-addCounterExample :: (NominalType i, _) => MQ i Bool -> Set [i] -> table -> table
+addCounterExample :: (Nominal i, _) => MQ i Bool -> Set [i] -> table -> table
 addCounterExample mq ces t =
     let newColumns = sum . map (fromList . tails) $ ces
         newColumnsRed = newColumns \\ cols t
      in addColumns mq newColumnsRed t
 
-learnBollig :: (NominalType i, _) => Int -> Int -> Teacher i -> Automaton _ i
+learnBollig :: (Nominal i, _) => Int -> Int -> Teacher i -> Automaton _ i
 learnBollig k n teacher = learnBolligLoop teacher (BOT.initialBTableSize (mqToBool teacher) (alphabet teacher) k n)
 
 -- Slow version
-learnBolligOld :: (NominalType i, _) => Int -> Int -> Teacher i -> Automaton _ i
+learnBolligOld :: (Nominal i, _) => Int -> Int -> Teacher i -> Automaton _ i
 learnBolligOld k n teacher = learnBolligLoop teacher (SOT.initialBTableSize (mqToBool teacher) (alphabet teacher) k n)
 
-learnBolligLoop :: (NominalType i, _) => Teacher i -> table -> Automaton (Row table) i
+learnBolligLoop :: (Nominal i, _) => Teacher i -> table -> Automaton (Row table) i
 learnBolligLoop teacher t =
     let
         -- These simplify's do speed up

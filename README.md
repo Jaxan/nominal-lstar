@@ -1,19 +1,13 @@
 Learning Nominal Automata
 =========================
 
-*NOTE*: Please download the archive `popl-artifact.zip`. This contains the
-specific versions (of this and nlambda) used for the POPL submission.
-This archive should contain a similar README, with simpler instructions.
-If you want the newest version of the software, then don't use that
-archive, but use the code in this repository.
-
-
 # Dependencies
 
 This artifact was tested on a Debian system. During development both Mac and
 Windows have been used, so it should work on these operating systems too. Note
 that you will need the Z3 solver (as executable). The algorithms are
 implemented in Haskell and you will need a recent GHC (at least 7.10).
+Currently, GHC 9.10 is used in the development.
 
 We use the library [nlambda](https://github.com/szynwelski/nlambda). It
 is recommended to use the most recent version. Just grab the source and
@@ -26,24 +20,28 @@ Follow the build guide on their website.
 
 # Building
 
-You can use the stack tool. Make sure to include nlambda as a package.
-It should be a matter of `stack build`, if not, stack will probably
-tell you what to do. (If you need any help, send me a message.)
+The `cabal` build tool should suffice. Please put both this repository and
+the nlambda repository somehwere, and add a `cabal.project` file with the
+following contents:
+```
+packages: nominal-lstar nlambda
+```
+Then a simple `cabal build all` should do it. To test whether everything
+works, run `cabal test nominal-lstar`. (Please get in touch if you have
+trouble setting it up.)
 
 
 # Running
 
-Stack will produce a binary in the `.stack-works` directory, which can
-be invoked directly. Alternatively one can run `stack exec nominal-lstar`.
-There is two modes of operation: Running the examples, or running it
-interactively.
+Run `cabal run nominal-lstar` within the `nominal-lstar` directory.
 
 ## Examples
 
-The executable expects three arguments:
+The executable expects one or three arguments:
 
 ```
-stack exec NominalAngluin -- <Learner> <Oracle> <Example>
+cabal run nominal-lstar <Learner>
+cabal run nominal-lstar <Learner> <Oracle> <Example>
 ```
 
 There are three learners:
@@ -75,7 +73,7 @@ stack data structure):
 
 For example:
 ```
-stack exec nominal-lstar -- NomLStar EqDFA "Fifo 2"
+cabal run nominal-lstar NomLStar EqDFA "Fifo 2"
 ```
 
 The program will output all the intermediate hypotheses. And will terminate
@@ -95,7 +93,7 @@ We proved by hand that the learnt model did indeed accept the language.
 
 Run the tool like so:
 ```
-stack exec nominal-lstar -- <Leaner>
+cabal run nominal-lstar <Leaner>
 ```
 (So similar to the above case, but without specifying the equivalence
 checker and example.) The tool will ask you membership queries and
@@ -122,7 +120,7 @@ A: True
 Q: [0]
 A: True
 Automaton {states = {{([],True)}}, alphabet = {a₁ : for a₁ ∊ 𝔸}, delta = {({([],True)},a₁,{([],True)}) : for a₁ ∊ 𝔸}, initialStates = {{([],True)}}, finalStates = {{([],True)}}}
-3. Equivalent? 
+3. Equivalent?
 
 # Is the following automaton correct?
 # Automaton {states = {{([],True)}}, alphabet = {a₁ : for a₁ ∊ 𝔸}, delta = {({([],True)},a₁,{([],True)}) : for a₁ ∊ 𝔸}, initialStates = {{([],True)}}, finalStates = {{([],True)}}}
@@ -142,10 +140,13 @@ A: True
 Q: [1,0]
 A: False
 Q: [1,0,1]
-A: 
+A:
 ```
 
 # Changes since first release
+
+The original version of the tool, presented at POPL, is commit e1b00e1 (from
+2016). Since then, some new features are implemented:
 
 * Better support for interactive communication.
 * Optimisation: add only one row/column to fix closedness/consistency

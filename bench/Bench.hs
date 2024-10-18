@@ -5,11 +5,10 @@ import Bollig (learnBollig)
 import Examples
 import Teacher
 
-import Gauge.Main
-import Gauge.Main.Options
+import Test.Tasty.Bench
 import NLambda
 
-{- Benchmarks can be run with `stack bench`. If you would like to run a
+{- Benchmarks can be run with `cabal bench`. If you would like to run a
    subset of benchmarks, you can do this with `stack bench --ba NomNLStar`
    for example. May take a long time (so we only run once).
 
@@ -24,13 +23,6 @@ import NLambda
    Examples.example4 is not used, because it takes a bit too long.
 -}
 
-myConfig :: Config
-myConfig = defaultConfig
-  { quickMode = True
-  , includeFirstIter = True
-  , csvFile = Just "bench.csv"
-  }
-
 -- Some bounds on the size of automata
 fifoBound = 4
 stackBound = 4
@@ -38,7 +30,7 @@ doublewordBound = 3
 nlastpositionBound = 4
 
 main :: IO ()
-main = defaultMainWith myConfig
+main = defaultMain
   [ bgroup "NomLStarR"
     [ bgroup "Fifo" $
       fmap (\n -> bench (show n) $ whnf lstar (target (fifoExample n))) [0..fifoBound]

@@ -1,0 +1,5 @@
+indentation: 4
+haddock-style: single-line
+single-constraint-parens: auto
+single-deriving-parens: auto
+respectful: true
